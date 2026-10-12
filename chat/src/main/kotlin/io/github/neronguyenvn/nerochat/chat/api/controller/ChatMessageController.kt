@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/messages")
+@RequestMapping("/api/chat/messages")
 class ChatMessageController(private val chatMessageService: ChatMessageService) {
 
     @DeleteMapping("/{messageId}")

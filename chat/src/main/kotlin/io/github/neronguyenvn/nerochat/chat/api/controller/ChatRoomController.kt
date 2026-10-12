@@ -1,33 +1,38 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.api.util.requesterId
-import io.github.neronguyenvn.nerochat.chat.api.model.*
+import io.github.neronguyenvn.nerochat.chat.api.model.AddChatParticipantRequest
+import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageDto
+import io.github.neronguyenvn.nerochat.chat.api.model.ChatRoomDto
+import io.github.neronguyenvn.nerochat.chat.api.model.CreateDirectChatRoomRequest
+import io.github.neronguyenvn.nerochat.chat.api.model.CreateGroupChatRoomRequest
+import io.github.neronguyenvn.nerochat.chat.api.model.asDto
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
 @RestController
-@RequestMapping(value = ["/api/chat-rooms", "/api/chat"])
+@RequestMapping("/api/chat/rooms")
 class ChatRoomController(private val chatRoomService: ChatRoomService) {
 
-    @GetMapping("/{chatRoomId}/messages")
-    fun getMessagesForChatRoom(
-        @PathVariable("chatRoomId") chatRoomId: ChatRoomId,
-        @RequestParam("before", required = false) before: Instant? = null,
-    ): List<ChatMessageDto> {
-        chatRoomService.getChatRoomById(chatRoomId, requesterId)
-            ?: throw ForbiddenException()
-
-        return chatRoomService.getChatMessages(
-            chatRoomId = chatRoomId,
-            before = before,
-        )
+    @GetMapping
+    fun getChatRooms(): List<ChatRoomDto> {
+        return chatRoomService
+            .findChatRoomsByUser(userId = requesterId)
+            .map { it.asDto() }
     }
 
     @GetMapping("/{chatRoomId}")
@@ -39,11 +44,18 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
             ?.asDto() ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
-    @GetMapping
-    fun getChatRoomsForUser(): List<ChatRoomDto> {
-        return chatRoomService
-            .findChatRoomsByUser(userId = requesterId)
-            .map { it.asDto() }
+    @GetMapping("/{chatRoomId}/messages")
+    fun getChatMessages(
+        @PathVariable("chatRoomId") chatRoomId: ChatRoomId,
+        @RequestParam("before", required = false) before: Instant? = null,
+    ): List<ChatMessageDto> {
+        chatRoomService.getChatRoomById(chatRoomId, requesterId)
+            ?: throw ForbiddenException()
+
+        return chatRoomService.getChatMessages(
+            chatRoomId = chatRoomId,
+            before = before,
+        )
     }
 
     @PostMapping("/direct")
@@ -69,7 +81,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
     }
 
     @PostMapping("/{chatRoomId}/add")
-    fun addChatRoomParticipants(
+    fun addParticipants(
         @PathVariable("chatRoomId") chatRoomId: ChatRoomId,
         @Valid @RequestBody body: AddChatParticipantRequest,
     ): ChatRoomDto {

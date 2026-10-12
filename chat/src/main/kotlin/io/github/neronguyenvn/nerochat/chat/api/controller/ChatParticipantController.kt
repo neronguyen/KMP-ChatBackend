@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 class ChatParticipantController(private val chatParticipantService: ChatParticipantService) {
 
     @GetMapping
-    fun getChatParticipantByEmail(
+    fun getChatParticipant(
         @RequestParam(required = false) email: String?,
     ): ChatParticipantDto {
         val participant = if (email.isNullOrBlank()) {

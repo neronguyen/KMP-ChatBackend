@@ -53,7 +53,7 @@ class ChatRoomControllerTest {
     }
 
     @Test
-    fun `getMessagesForChatRoom returns messages when requester is participant`() {
+    fun `getChatMessages returns messages when requester is participant`() {
         val chatRoom = mock(ChatRoom::class.java)
         `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(chatRoom)
 
@@ -68,7 +68,7 @@ class ChatRoomControllerTest {
         )
         `when`(chatRoomService.getChatMessages(chatRoomId, null)).thenReturn(expectedMessages)
 
-        val result = controller.getMessagesForChatRoom(chatRoomId = chatRoomId)
+        val result = controller.getChatMessages(chatRoomId = chatRoomId)
 
         assertEquals(expectedMessages, result)
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
@@ -76,11 +76,11 @@ class ChatRoomControllerTest {
     }
 
     @Test
-    fun `getMessagesForChatRoom throws ForbiddenException when requester is not participant`() {
+    fun `getChatMessages throws ForbiddenException when requester is not participant`() {
         `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(null)
 
         assertThrows<ForbiddenException> {
-            controller.getMessagesForChatRoom(chatRoomId = chatRoomId)
+            controller.getChatMessages(chatRoomId = chatRoomId)
         }
 
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)

@@ -38,7 +38,7 @@ class ChatParticipantControllerTest {
     }
 
     @Test
-    fun `getChatParticipantByEmail returns requester participant when email is null`() {
+    fun `getChatParticipant returns requester participant when email is null`() {
         val requesterParticipant = ChatParticipant(
             userId = requesterUserId,
             email = "requester@example.com",
@@ -49,7 +49,7 @@ class ChatParticipantControllerTest {
             requesterParticipant
         )
 
-        val result = controller.getChatParticipantByEmail(email = null)
+        val result = controller.getChatParticipant(email = null)
 
         assertEquals(requesterUserId.value, result.userId)
         assertEquals("requester@example.com", result.email)
@@ -59,7 +59,7 @@ class ChatParticipantControllerTest {
     }
 
     @Test
-    fun `getChatParticipantByEmail returns requester participant when email is blank`() {
+    fun `getChatParticipant returns requester participant when email is blank`() {
         val requesterParticipant = ChatParticipant(
             userId = requesterUserId,
             email = "requester@example.com",
@@ -70,18 +70,18 @@ class ChatParticipantControllerTest {
             requesterParticipant
         )
 
-        val result = controller.getChatParticipantByEmail(email = "   ")
+        val result = controller.getChatParticipant(email = "   ")
 
         assertEquals(requesterUserId.value, result.userId)
         verify(chatParticipantService).findChatParticipantById(requesterUserId)
     }
 
     @Test
-    fun `getChatParticipantByEmail throws ChatParticipantNotFoundException when requester is not found`() {
+    fun `getChatParticipant throws ChatParticipantNotFoundException when requester is not found`() {
         `when`(chatParticipantService.findChatParticipantById(requesterUserId)).thenReturn(null)
 
         val exception = assertThrows<ChatParticipantNotFoundException> {
-            controller.getChatParticipantByEmail(email = null)
+            controller.getChatParticipant(email = null)
         }
 
         assertEquals(
@@ -92,7 +92,7 @@ class ChatParticipantControllerTest {
     }
 
     @Test
-    fun `getChatParticipantByEmail returns participant when email is provided and found`() {
+    fun `getChatParticipant returns participant when email is provided and found`() {
         val searchEmail = "target@example.com"
         val targetUserId = UserId(UUID.randomUUID())
         val targetParticipant = ChatParticipant(
@@ -105,7 +105,7 @@ class ChatParticipantControllerTest {
             targetParticipant
         )
 
-        val result = controller.getChatParticipantByEmail(email = searchEmail)
+        val result = controller.getChatParticipant(email = searchEmail)
 
         assertEquals(targetUserId.value, result.userId)
         assertEquals(searchEmail, result.email)
@@ -114,12 +114,12 @@ class ChatParticipantControllerTest {
     }
 
     @Test
-    fun `getChatParticipantByEmail throws ChatParticipantNotFoundException when email is provided and not found`() {
+    fun `getChatParticipant throws ChatParticipantNotFoundException when email is provided and not found`() {
         val searchEmail = "nonexistent@example.com"
         `when`(chatParticipantService.findChatParticipantByEmail(searchEmail)).thenReturn(null)
 
         val exception = assertThrows<ChatParticipantNotFoundException> {
-            controller.getChatParticipantByEmail(email = searchEmail)
+            controller.getChatParticipant(email = searchEmail)
         }
 
         assertEquals(
