@@ -105,7 +105,7 @@ class ChatRoomServiceTest {
         val messageId = UUID.randomUUID()
         val createdMessageEntity = ChatMessageEntity(
             id = messageId,
-            chatRoomId = roomId,
+            roomId = roomId,
             sender = creatorEntity,
             content = "Hello there",
             createdAt = Instant.now()
@@ -156,12 +156,12 @@ class ChatRoomServiceTest {
 
         val existingMessageEntity = ChatMessageEntity(
             id = UUID.randomUUID(),
-            chatRoomId = existingRoomId,
+            roomId = existingRoomId,
             sender = creatorEntity,
             content = "Previous message",
             createdAt = Instant.now()
         )
-        `when`(chatMessageRepository.findLatestMessagesByChatRoomIds(setOf(existingRoomId)))
+        `when`(chatMessageRepository.findLatestMessagesByRoomIds(setOf(existingRoomId)))
             .thenReturn(listOf(existingMessageEntity))
 
         val result = chatRoomService.createDirectChatRoom(
@@ -366,7 +366,7 @@ class ChatRoomServiceTest {
 
         assertThrows<ForbiddenException> {
             chatRoomService.addParticipantsToChatRoom(
-                chatRoomId = roomId,
+                roomId = roomId,
                 requesterId = creatorId,
                 userIds = setOf(user3Id)
             )
@@ -395,7 +395,7 @@ class ChatRoomServiceTest {
         `when`(chatRoomRepository.save(any(ChatRoomEntity::class.java))).thenReturn(roomEntity)
 
         val result = chatRoomService.addParticipantsToChatRoom(
-            chatRoomId = roomId,
+            roomId = roomId,
             requesterId = creatorId,
             userIds = setOf(user3Id)
         )
@@ -406,7 +406,7 @@ class ChatRoomServiceTest {
         val captor =
             ArgumentCaptor.forClass(InternalChatEvent.ChatParticipantJoinedEvent::class.java)
         verify(applicationEventPublisher).publishEvent(captor.capture())
-        assertEquals(roomId, captor.value.chatRoomId)
+        assertEquals(roomId, captor.value.roomId)
         assertEquals(1, captor.value.newUsers.size)
         assertEquals(user3Id.value, captor.value.newUsers.first().userId.value)
     }
@@ -426,7 +426,7 @@ class ChatRoomServiceTest {
 
         assertThrows<ForbiddenException> {
             chatRoomService.addParticipantsToChatRoom(
-                chatRoomId = roomId,
+                roomId = roomId,
                 requesterId = user3Id,
                 userIds = setOf(user3Id)
             )
@@ -446,7 +446,7 @@ class ChatRoomServiceTest {
         `when`(chatRoomRepository.findById(roomId.asUUID())).thenReturn(Optional.of(roomEntity))
 
         chatRoomService.removeParticipantFromChatRoom(
-            chatRoomId = roomId,
+            roomId = roomId,
             userId = creatorId
         )
 
@@ -455,7 +455,7 @@ class ChatRoomServiceTest {
 
         val captor = ArgumentCaptor.forClass(InternalChatEvent.ChatParticipantLeftEvent::class.java)
         verify(applicationEventPublisher).publishEvent(captor.capture())
-        assertEquals(roomId, captor.value.chatRoomId)
+        assertEquals(roomId, captor.value.roomId)
         assertEquals(creatorId.value, captor.value.leftUser.userId.value)
     }
 
@@ -473,7 +473,7 @@ class ChatRoomServiceTest {
         `when`(chatRoomRepository.findById(roomId.asUUID())).thenReturn(Optional.of(roomEntity))
 
         chatRoomService.removeParticipantFromChatRoom(
-            chatRoomId = roomId,
+            roomId = roomId,
             userId = creatorId
         )
 
@@ -482,7 +482,7 @@ class ChatRoomServiceTest {
 
         val captor = ArgumentCaptor.forClass(InternalChatEvent.ChatParticipantLeftEvent::class.java)
         verify(applicationEventPublisher).publishEvent(captor.capture())
-        assertEquals(roomId, captor.value.chatRoomId)
+        assertEquals(roomId, captor.value.roomId)
         assertEquals(creatorId.value, captor.value.leftUser.userId.value)
     }
 
@@ -501,7 +501,7 @@ class ChatRoomServiceTest {
         `when`(chatRoomRepository.save(any(ChatRoomEntity::class.java))).thenReturn(roomEntity)
 
         chatRoomService.removeParticipantFromChatRoom(
-            chatRoomId = roomId,
+            roomId = roomId,
             userId = targetUserId
         )
 
@@ -510,7 +510,7 @@ class ChatRoomServiceTest {
 
         val captor = ArgumentCaptor.forClass(InternalChatEvent.ChatParticipantLeftEvent::class.java)
         verify(applicationEventPublisher).publishEvent(captor.capture())
-        assertEquals(roomId, captor.value.chatRoomId)
+        assertEquals(roomId, captor.value.roomId)
         assertEquals(targetUserId.value, captor.value.leftUser.userId.value)
     }
 
@@ -521,7 +521,7 @@ class ChatRoomServiceTest {
 
         assertThrows<ChatRoomNotFoundException> {
             chatRoomService.removeParticipantFromChatRoom(
-                chatRoomId = roomId,
+                roomId = roomId,
                 userId = creatorId
             )
         }
@@ -542,7 +542,7 @@ class ChatRoomServiceTest {
 
         assertThrows<ChatParticipantNotFoundException> {
             chatRoomService.removeParticipantFromChatRoom(
-                chatRoomId = roomId,
+                roomId = roomId,
                 userId = targetUserId
             )
         }

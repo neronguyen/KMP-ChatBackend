@@ -6,7 +6,7 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 interface ChatMessageRepository : JpaRepository<ChatMessageEntity, UUID> {
 
@@ -15,13 +15,13 @@ interface ChatMessageRepository : JpaRepository<ChatMessageEntity, UUID> {
         SELECT m
         FROM ChatMessageEntity m
         JOIN FETCH m.sender
-        WHERE m.chatRoomId = :chatRoomId
+        WHERE m.roomId = :roomId
         AND (:before IS NULL OR m.createdAt < :before) 
         ORDER BY m.createdAt DESC
     """
     )
-    fun findByChatRoomIdBefore(
-        chatRoomId: UUID,
+    fun findByRoomIdBefore(
+        roomId: UUID,
         before: Instant?,
         pageable: Pageable
     ): Slice<ChatMessageEntity>
@@ -31,15 +31,15 @@ interface ChatMessageRepository : JpaRepository<ChatMessageEntity, UUID> {
         SELECT m
         FROM ChatMessageEntity m
         LEFT JOIN FETCH m.sender
-        WHERE m.chatRoomId IN :chatRoomIds
+        WHERE m.roomId IN :roomIds
         AND (m.createdAt, m.id) = (
             SELECT m2.createdAt, m2.id
             FROM ChatMessageEntity m2
-            WHERE m2.chatRoomId = m.chatRoomId
+            WHERE m2.roomId = m.roomId
             ORDER BY m2.createdAt DESC 
             LIMIT 1
         )
     """
     )
-    fun findLatestMessagesByChatRoomIds(chatRoomIds: Set<UUID>): List<ChatMessageEntity>
+    fun findLatestMessagesByRoomIds(roomIds: Set<UUID>): List<ChatMessageEntity>
 }

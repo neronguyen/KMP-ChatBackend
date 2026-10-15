@@ -19,14 +19,14 @@ sealed class OutgoingWsMessage {
     @Serializable
     @SerialName(MESSAGE_DELETED)
     data class MessageDeleted(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val messageId: ChatMessageId
     ) : OutgoingWsMessage()
 
     @Serializable
     @SerialName(PARTICIPANT_JOINED)
     data class ParticipantJoined(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val newUsers: List<ChatParticipantDto>,
         val addedBy: ChatParticipantDto? = null
     ) : OutgoingWsMessage()
@@ -34,7 +34,7 @@ sealed class OutgoingWsMessage {
     @Serializable
     @SerialName(PARTICIPANT_LEFT)
     data class ParticipantLeft(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val leftUser: ChatParticipantDto,
         val kickedBy: ChatParticipantDto? = null
     ) : OutgoingWsMessage()

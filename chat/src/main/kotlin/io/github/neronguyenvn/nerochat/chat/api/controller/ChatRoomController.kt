@@ -35,25 +35,25 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
             .map { it.asDto() }
     }
 
-    @GetMapping("/{chatRoomId}")
+    @GetMapping("/{roomId}")
     fun getChatRoom(
-        @PathVariable("chatRoomId") chatRoomId: ChatRoomId,
+        @PathVariable("roomId") roomId: ChatRoomId,
     ): ChatRoomDto {
         return chatRoomService
-            .getChatRoomById(chatRoomId = chatRoomId, requesterId = requesterId)
+            .getChatRoomById(roomId = roomId, requesterId = requesterId)
             ?.asDto() ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
-    @GetMapping("/{chatRoomId}/messages")
+    @GetMapping("/{roomId}/messages")
     fun getChatMessages(
-        @PathVariable("chatRoomId") chatRoomId: ChatRoomId,
+        @PathVariable("roomId") roomId: ChatRoomId,
         @RequestParam("before", required = false) before: Instant? = null,
     ): List<ChatMessageDto> {
-        chatRoomService.getChatRoomById(chatRoomId, requesterId)
+        chatRoomService.getChatRoomById(roomId, requesterId)
             ?: throw ForbiddenException()
 
         return chatRoomService.getChatMessages(
-            chatRoomId = chatRoomId,
+            roomId = roomId,
             before = before,
         )
     }
@@ -80,24 +80,24 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         ).asDto()
     }
 
-    @PostMapping("/{chatRoomId}/add")
+    @PostMapping("/{roomId}/add")
     fun addParticipants(
-        @PathVariable("chatRoomId") chatRoomId: ChatRoomId,
+        @PathVariable("roomId") roomId: ChatRoomId,
         @Valid @RequestBody body: AddChatParticipantRequest,
     ): ChatRoomDto {
         return chatRoomService.addParticipantsToChatRoom(
             requesterId = requesterId,
-            chatRoomId = chatRoomId,
+            roomId = roomId,
             userIds = body.userIds.toSet()
         ).asDto()
     }
 
-    @DeleteMapping("/{chatRoomId}/leave")
+    @DeleteMapping("/{roomId}/leave")
     fun leaveChatRoom(
-        @PathVariable("chatRoomId") chatRoomId: ChatRoomId,
+        @PathVariable("roomId") roomId: ChatRoomId,
     ) {
         chatRoomService.removeParticipantFromChatRoom(
-            chatRoomId = chatRoomId,
+            roomId = roomId,
             userId = requesterId
         )
     }

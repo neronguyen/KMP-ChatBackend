@@ -60,7 +60,7 @@ class ChatRoomControllerTest {
         val expectedMessages = listOf(
             ChatMessageDto(
                 id = UUID.randomUUID().toString(),
-                chatRoomId = chatRoomId.value,
+                roomId = chatRoomId.value,
                 senderId = userId.value,
                 content = "Hello",
                 createdAt = Clock.System.now()
@@ -68,7 +68,7 @@ class ChatRoomControllerTest {
         )
         `when`(chatRoomService.getChatMessages(chatRoomId, null)).thenReturn(expectedMessages)
 
-        val result = controller.getChatMessages(chatRoomId = chatRoomId)
+        val result = controller.getChatMessages(roomId = chatRoomId)
 
         assertEquals(expectedMessages, result)
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
@@ -80,7 +80,7 @@ class ChatRoomControllerTest {
         `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(null)
 
         assertThrows<ForbiddenException> {
-            controller.getChatMessages(chatRoomId = chatRoomId)
+            controller.getChatMessages(roomId = chatRoomId)
         }
 
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
@@ -106,7 +106,7 @@ class ChatRoomControllerTest {
         val now = Clock.System.now()
         val message = ChatMessage(
             id = ChatMessageId(UUID.randomUUID().toString()),
-            chatRoomId = roomId,
+            roomId = roomId,
             sender = creatorParticipant,
             content = "Hi there",
             createdAt = now
