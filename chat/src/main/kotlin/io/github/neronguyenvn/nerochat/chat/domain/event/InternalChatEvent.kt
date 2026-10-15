@@ -12,17 +12,17 @@ internal sealed class InternalChatEvent {
     ) : InternalChatEvent()
 
     data class ChatParticipantJoinedEvent(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val newUsers: Set<ChatParticipant>
     ) : InternalChatEvent()
 
     data class ChatParticipantLeftEvent(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val leftUser: ChatParticipant
     ) : InternalChatEvent()
 
     data class MessageDeletedEvent(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val messageId: ChatMessageId,
     ) : InternalChatEvent()
 }

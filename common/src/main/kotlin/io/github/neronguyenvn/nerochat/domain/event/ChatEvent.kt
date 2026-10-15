@@ -11,7 +11,7 @@ sealed class ChatEvent : Event() {
 
     @Serializable
     data class NewMessage(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val senderId: UserId,
         val message: String,
         override val key: String = CHAT_NEW_MESSAGE

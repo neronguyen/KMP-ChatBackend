@@ -36,15 +36,15 @@ class ChatMessageService(
     @Transactional
     @CacheEvict(
         value = [CacheNames.MESSAGES],
-        key = "#chatRoomId",
+        key = "#roomId",
     )
     fun sendMessage(
-        chatRoomId: ChatRoomId,
+        roomId: ChatRoomId,
         senderId: UserId,
         content: String,
         messageId: ChatMessageId? = null
     ): ChatMessage {
-        chatRoomRepository.findChatRoomById(chatRoomId.asUUID(), senderId.asUUID())
+        chatRoomRepository.findChatRoomById(roomId.asUUID(), senderId.asUUID())
             ?: throw ChatRoomNotFoundException()
 
         val sender = chatParticipantRepository.findByIdOrNull(senderId.asUUID())
@@ -53,7 +53,7 @@ class ChatMessageService(
         val savedMessage = chatMessageRepository.saveAndFlush(
             ChatMessageEntity(
                 id = messageId?.asUUID(),
-                chatRoomId = chatRoomId.asUUID(),
+                roomId = roomId.asUUID(),
                 sender = sender,
                 content = content.trim(),
             )
@@ -61,7 +61,7 @@ class ChatMessageService(
 
         eventPublisher.publish(
             event = ChatEvent.NewMessage(
-                chatRoomId = chatRoomId,
+                roomId = roomId,
                 senderId = UserId(sender.userId),
                 message = savedMessage.content
             )
@@ -86,13 +86,13 @@ class ChatMessageService(
 
         applicationEventPublisher.publishEvent(
             InternalChatEvent.MessageDeletedEvent(
-                chatRoomId = ChatRoomId(message.chatRoomId),
+                roomId = ChatRoomId(message.roomId),
                 messageId = messageId
             )
         )
 
         cacheManager
             .getCache(CacheNames.MESSAGES)
-            ?.evict(ChatRoomId(message.chatRoomId))
+            ?.evict(ChatRoomId(message.roomId))
     }
 }

@@ -39,17 +39,17 @@ class ChatRoomService(
 ) {
     @Cacheable(
         value = [CacheNames.MESSAGES],
-        key = "#chatRoomId",
+        key = "#roomId",
         condition = "#before == null",
         sync = true
     )
     fun getChatMessages(
-        chatRoomId: ChatRoomId,
+        roomId: ChatRoomId,
         before: Instant?,
     ): List<ChatMessageDto> {
         return chatMessageRepository
-            .findByChatRoomIdBefore(
-                chatRoomId = chatRoomId.asUUID(),
+            .findByRoomIdBefore(
+                roomId = roomId.asUUID(),
                 before = before,
                 pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
             )
@@ -59,21 +59,21 @@ class ChatRoomService(
     }
 
     fun getChatRoomById(
-        chatRoomId: ChatRoomId,
+        roomId: ChatRoomId,
         requesterId: UserId
     ): ChatRoom? {
         return chatRoomRepository
-            .findChatRoomById(chatRoomId.asUUID(), requesterId.asUUID())
-            ?.asExternalModel(lastMessage = findLastMessageOfChatRoom(chatRoomId = chatRoomId))
+            .findChatRoomById(roomId.asUUID(), requesterId.asUUID())
+            ?.asExternalModel(lastMessage = findLastMessageOfChatRoom(roomId = roomId))
     }
 
     fun findChatRoomsByUser(userId: UserId): List<ChatRoom> {
         val chatRoomEntities = chatRoomRepository.findAllByUserId(userId.asUUID())
-        val chatRoomIds = chatRoomEntities.mapNotNull { it.id }.toSet()
+        val roomIds = chatRoomEntities.mapNotNull { it.id }.toSet()
 
         val latestMessages = chatMessageRepository
-            .findLatestMessagesByChatRoomIds(chatRoomIds)
-            .associateBy { it.chatRoomId }
+            .findLatestMessagesByRoomIds(roomIds)
+            .associateBy { it.roomId }
 
         return chatRoomEntities
             .map { chatRoomEntity ->
@@ -104,7 +104,7 @@ class ChatRoomService(
 
         if (existingRoom != null) {
             val lastMessage = chatMessageRepository
-                .findLatestMessagesByChatRoomIds(setOf(existingRoom.id!!))
+                .findLatestMessagesByRoomIds(setOf(existingRoom.id!!))
                 .firstOrNull()
                 ?.asExternalModel()
 
@@ -126,7 +126,7 @@ class ChatRoomService(
 
         val initialMessage = chatMessageRepository.save(
             ChatMessageEntity(
-                chatRoomId = newRoom.id ?: error("ChatRoomId must be generated"),
+                roomId = newRoom.id ?: error("ChatRoomId must be generated"),
                 sender = creator,
                 content = message.trim(),
             )
@@ -188,11 +188,11 @@ class ChatRoomService(
 
     @Transactional
     fun addParticipantsToChatRoom(
-        chatRoomId: ChatRoomId,
+        roomId: ChatRoomId,
         requesterId: UserId,
         userIds: Set<UserId>
     ): ChatRoom {
-        val chatRoom = chatRoomRepository.findByIdOrNull(chatRoomId.asUUID())
+        val chatRoom = chatRoomRepository.findByIdOrNull(roomId.asUUID())
             ?: throw ChatRoomNotFoundException()
 
         if (chatRoom.type == ChatRoomType.DIRECT) {
@@ -218,7 +218,7 @@ class ChatRoomService(
                 ?: throw ChatParticipantNotFoundException(userId)
         }
 
-        val lastMessage = findLastMessageOfChatRoom(chatRoomId = chatRoomId)
+        val lastMessage = findLastMessageOfChatRoom(roomId = roomId)
         val updatedChatRoom = chatRoomRepository.save(
             chatRoom.apply {
                 this.participants = chatRoom.participants + users
@@ -227,7 +227,7 @@ class ChatRoomService(
 
         applicationEventPublisher.publishEvent(
             InternalChatEvent.ChatParticipantJoinedEvent(
-                chatRoomId = chatRoomId,
+                roomId = roomId,
                 newUsers = users.map { it.asExternalModel() }.toSet()
             )
         )
@@ -237,10 +237,10 @@ class ChatRoomService(
 
     @Transactional
     fun removeParticipantFromChatRoom(
-        chatRoomId: ChatRoomId,
+        roomId: ChatRoomId,
         userId: UserId
     ) {
-        val chatRoom = chatRoomRepository.findByIdOrNull(chatRoomId.asUUID())
+        val chatRoom = chatRoomRepository.findByIdOrNull(roomId.asUUID())
             ?: throw ChatRoomNotFoundException()
 
         val participant = chatRoom.participants.find { UserId(it.userId) == userId }
@@ -248,7 +248,7 @@ class ChatRoomService(
 
         val newParticipantsSize = chatRoom.participants.size - 1
         if (chatRoom.type == ChatRoomType.DIRECT || newParticipantsSize == 0) {
-            chatRoomRepository.deleteById(chatRoomId.asUUID())
+            chatRoomRepository.deleteById(roomId.asUUID())
         } else {
             chatRoomRepository.save(
                 chatRoom.apply {
@@ -259,15 +259,15 @@ class ChatRoomService(
 
         applicationEventPublisher.publishEvent(
             InternalChatEvent.ChatParticipantLeftEvent(
-                chatRoomId = chatRoomId,
+                roomId = roomId,
                 leftUser = participant.asExternalModel()
             )
         )
     }
 
-    private fun findLastMessageOfChatRoom(chatRoomId: ChatRoomId): ChatMessage? {
+    private fun findLastMessageOfChatRoom(roomId: ChatRoomId): ChatMessage? {
         return chatMessageRepository
-            .findLatestMessagesByChatRoomIds(setOf(chatRoomId.asUUID()))
+            .findLatestMessagesByRoomIds(setOf(roomId.asUUID()))
             .firstOrNull()
             ?.asExternalModel()
     }

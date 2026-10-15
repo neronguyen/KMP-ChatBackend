@@ -11,7 +11,7 @@ sealed class IncomingWsMessage {
     @Serializable
     @SerialName(NEW_MESSAGE)
     data class NewMessage(
-        val chatRoomId: ChatRoomId,
+        val roomId: ChatRoomId,
         val content: String,
         val messageId: ChatMessageId? = null
     ) : IncomingWsMessage()
