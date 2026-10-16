@@ -4,11 +4,13 @@ import io.github.neronguyenvn.nerochat.chat.api.model.asDto
 import io.github.neronguyenvn.nerochat.chat.api.model.websocket.IncomingWsMessage
 import io.github.neronguyenvn.nerochat.chat.api.model.websocket.OutgoingWsMessage
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
+import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.service.JwtService
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
@@ -164,8 +166,26 @@ class ChatWebSocketHandler(
         logger.debug("Received message ${message.payload}")
         val userSession = sessionsById[session.id] ?: return
 
+        val incoming = try {
+            json.decodeFromString<IncomingWsMessage>(message.payload)
+        } catch (e: SerializationException) {
+            logger.warn("Payload decode error from session ${session.id}: ${e.message}")
+            userSession.sendError(
+                code = "INVALID_JSON",
+                message = "Malformed payload"
+            )
+            return
+        } catch (e: IllegalArgumentException) {
+            logger.warn("Payload decode error from session ${session.id}: ${e.message}")
+            userSession.sendError(
+                code = "INVALID_JSON",
+                message = "Malformed payload"
+            )
+            return
+        }
+
         try {
-            when (val incoming = json.decodeFromString<IncomingWsMessage>(message.payload)) {
+            when (incoming) {
                 is IncomingWsMessage.NewMessage -> {
                     handleIncomingNewMessage(
                         senderId = userSession.userId,
@@ -173,16 +193,37 @@ class ChatWebSocketHandler(
                     )
                 }
             }
-            // TODO: Handle specific errors
-        } catch (e: Exception) {
-            logger.warn("Payload decode error from session ${session.id}: ${e.message}")
-            val outgoing = OutgoingWsMessage.Error(
-                code = "INVALID_JSON",
-                message = "Malformed payload"
+        } catch (e: IllegalArgumentException) {
+            logger.warn("Invalid message parameters from session ${session.id}: ${e.message}")
+            userSession.sendError(
+                code = "INVALID_PAYLOAD",
+                message = "Invalid message parameters"
             )
-            val payload = TextMessage(json.encodeToString(outgoing))
-            userSession.sendMessage(payload)
+        } catch (e: DuplicateMessageIdException) {
+            logger.warn("Duplicate message ID from session ${session.id}: ${e.message}")
+            userSession.sendError(
+                code = "DUPLICATE_MESSAGE_ID",
+                message = e.message ?: "Duplicate message ID"
+            )
+        } catch (e: Exception) {
+            logger.error("Failed to handle WebSocket message from session ${session.id}", e)
+            userSession.sendError(
+                code = "MESSAGE_SEND_FAILED",
+                message = "Failed to send message"
+            )
         }
+    }
+
+    private fun UserSession.sendError(
+        code: String,
+        message: String
+    ) {
+        val outgoing: OutgoingWsMessage = OutgoingWsMessage.Error(
+            code = code,
+            message = message
+        )
+        val payload = TextMessage(json.encodeToString(outgoing))
+        sendMessage(payload)
     }
 
     private fun handleIncomingNewMessage(

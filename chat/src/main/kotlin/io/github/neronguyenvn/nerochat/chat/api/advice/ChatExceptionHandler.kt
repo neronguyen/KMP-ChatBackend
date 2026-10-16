@@ -2,6 +2,7 @@ package io.github.neronguyenvn.nerochat.chat.api.advice
 
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.MessageNotFoundException
 import org.springframework.http.HttpStatus
@@ -27,6 +28,13 @@ class ChatExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun onForbidden(e: InvalidChatRoomSizeException) = mapOf(
         "code" to "INVALID_CHAT_ROOM_SIZE",
+        "message" to e.message
+    )
+
+    @ExceptionHandler(DuplicateMessageIdException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun onDuplicateMessageId(e: DuplicateMessageIdException) = mapOf(
+        "code" to "DUPLICATE_MESSAGE_ID",
         "message" to e.message
     )
 }

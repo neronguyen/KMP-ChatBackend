@@ -38,6 +38,7 @@ redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-sta
 redisson-spring-cache = { module = "org.redisson:redisson-spring-cache", version.ref = "redission" }
 
 # Testing
+h2 = { module = "com.h2database:h2" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [plugins]

@@ -6,14 +6,16 @@ import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.PostLoad
+import jakarta.persistence.PostPersist
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.hibernate.annotations.CreationTimestamp
+import org.springframework.data.domain.Persistable
 import java.time.Instant
 import java.util.UUID
 import kotlin.time.ExperimentalTime
@@ -32,8 +34,9 @@ import kotlin.time.toKotlinInstant
 )
 class ChatMessageEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    var id: UUID? = null,
+    @Column(nullable = false, updatable = false)
+    @get:JvmName("getEntityId")
+    var id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
     var content: String,
@@ -51,11 +54,25 @@ class ChatMessageEntity(
 
     @CreationTimestamp
     var createdAt: Instant = Instant.now()
-)
+) : Persistable<UUID> {
+
+    @Transient
+    private var isNewEntity: Boolean = true
+
+    override fun getId(): UUID = id
+
+    override fun isNew(): Boolean = isNewEntity
+
+    @PostPersist
+    @PostLoad
+    private fun markNotNew() {
+        isNewEntity = false
+    }
+}
 
 @OptIn(ExperimentalTime::class)
 fun ChatMessageEntity.asExternalModel() = ChatMessage(
-    id = ChatMessageId(id?.toString() ?: error("ChatMessageId have to be generated")),
+    id = ChatMessageId(id.toString()),
     roomId = ChatRoomId(roomId.toString()),
     content = content,
     sender = sender.asExternalModel(),

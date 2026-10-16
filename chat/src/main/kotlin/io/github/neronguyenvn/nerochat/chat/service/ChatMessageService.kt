@@ -3,6 +3,7 @@ package io.github.neronguyenvn.nerochat.chat.service
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.MessageNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
@@ -23,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 class ChatMessageService(
@@ -44,16 +46,30 @@ class ChatMessageService(
         content: String,
         messageId: ChatMessageId? = null
     ): ChatMessage {
-        chatRoomRepository.findChatRoomById(roomId.asUUID(), senderId.asUUID())
+        val roomUuid = roomId.asUUID()
+        val senderUuid = senderId.asUUID()
+
+        chatRoomRepository.findChatRoomById(roomUuid, senderUuid)
             ?: throw ChatRoomNotFoundException()
 
-        val sender = chatParticipantRepository.findByIdOrNull(senderId.asUUID())
+        val sender = chatParticipantRepository.findByIdOrNull(senderUuid)
             ?: throw ChatParticipantNotFoundException(senderId)
+
+        val targetMessageUuid = messageId?.asUUID()
+        if (targetMessageUuid != null) {
+            val existingMessage = chatMessageRepository.findByIdOrNull(targetMessageUuid)
+            if (existingMessage != null) {
+                if (existingMessage.roomId == roomUuid && existingMessage.sender.userId == senderUuid) {
+                    return existingMessage.asExternalModel()
+                }
+                throw DuplicateMessageIdException(messageId)
+            }
+        }
 
         val savedMessage = chatMessageRepository.saveAndFlush(
             ChatMessageEntity(
-                id = messageId?.asUUID(),
-                roomId = roomId.asUUID(),
+                id = targetMessageUuid ?: UUID.randomUUID(),
+                roomId = roomUuid,
                 sender = sender,
                 content = content.trim(),
             )
