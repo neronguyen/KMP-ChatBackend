@@ -1,6 +1,7 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageDto
+import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.chat.api.model.CreateDirectChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.api.model.CreateGroupChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
@@ -57,20 +58,23 @@ class ChatRoomControllerTest {
         val chatRoom = mock(ChatRoom::class.java)
         `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(chatRoom)
 
-        val expectedMessages = listOf(
-            ChatMessageDto(
-                id = UUID.randomUUID().toString(),
-                roomId = chatRoomId.value,
-                senderId = userId.value,
-                content = "Hello",
-                createdAt = Clock.System.now()
-            )
+        val expectedResponse = ChatMessageSliceDto(
+            messages = listOf(
+                ChatMessageDto(
+                    id = UUID.randomUUID().toString(),
+                    roomId = chatRoomId.value,
+                    senderId = userId.value,
+                    content = "Hello",
+                    createdAt = Clock.System.now()
+                )
+            ),
+            hasMore = false
         )
-        `when`(chatRoomService.getChatMessages(chatRoomId, null)).thenReturn(expectedMessages)
+        `when`(chatRoomService.getChatMessages(chatRoomId, null)).thenReturn(expectedResponse)
 
         val result = controller.getChatMessages(roomId = chatRoomId)
 
-        assertEquals(expectedMessages, result)
+        assertEquals(expectedResponse, result)
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
         verify(chatRoomService).getChatMessages(chatRoomId, null)
     }

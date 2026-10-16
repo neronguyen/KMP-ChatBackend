@@ -1,6 +1,6 @@
 package io.github.neronguyenvn.nerochat.chat.service
 
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageDto
+import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.chat.api.model.asDto
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
@@ -46,16 +46,17 @@ class ChatRoomService(
     fun getChatMessages(
         roomId: ChatRoomId,
         before: Instant?,
-    ): List<ChatMessageDto> {
-        return chatMessageRepository
-            .findByRoomIdBefore(
-                roomId = roomId.asUUID(),
-                before = before,
-                pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
-            )
-            .content
-            .asReversed()
-            .map { it.asExternalModel().asDto() }
+    ): ChatMessageSliceDto {
+        val slice = chatMessageRepository.findByRoomIdBefore(
+            roomId = roomId.asUUID(),
+            before = before,
+            pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
+        )
+
+        return ChatMessageSliceDto(
+            messages = slice.content.asReversed().map { it.asExternalModel().asDto() },
+            hasMore = slice.hasNext()
+        )
     }
 
     fun getChatRoomById(

@@ -2,7 +2,7 @@ package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.api.util.requesterId
 import io.github.neronguyenvn.nerochat.chat.api.model.AddChatParticipantRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageDto
+import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.chat.api.model.ChatRoomDto
 import io.github.neronguyenvn.nerochat.chat.api.model.CreateDirectChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.api.model.CreateGroupChatRoomRequest
@@ -48,7 +48,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
     fun getChatMessages(
         @PathVariable("roomId") roomId: ChatRoomId,
         @RequestParam("before", required = false) before: Instant? = null,
-    ): List<ChatMessageDto> {
+    ): ChatMessageSliceDto {
         chatRoomService.getChatRoomById(roomId, requesterId)
             ?: throw ForbiddenException()
 
