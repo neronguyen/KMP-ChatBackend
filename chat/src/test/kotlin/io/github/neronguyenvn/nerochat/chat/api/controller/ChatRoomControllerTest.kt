@@ -70,13 +70,13 @@ class ChatRoomControllerTest {
             ),
             hasMore = false
         )
-        `when`(chatRoomService.getChatMessages(chatRoomId, null)).thenReturn(expectedResponse)
+        `when`(chatRoomService.getChatMessages(chatRoomId, null, null)).thenReturn(expectedResponse)
 
         val result = controller.getChatMessages(roomId = chatRoomId)
 
         assertEquals(expectedResponse, result)
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
-        verify(chatRoomService).getChatMessages(chatRoomId, null)
+        verify(chatRoomService).getChatMessages(chatRoomId, null, null)
     }
 
     @Test

@@ -10,6 +10,7 @@ import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.service.JwtService
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.scheduling.annotation.Scheduled
@@ -192,17 +193,25 @@ class ChatWebSocketHandler(
         val allowedChatRooms = roomIdsByUserId[senderId] ?: return
         if (incoming.roomId !in allowedChatRooms) return
 
-        val savedMessage = chatMessageService.sendMessage(
+        val (savedMessage, isNew) = chatMessageService.sendMessage(
             roomId = incoming.roomId,
             senderId = senderId,
             content = incoming.content,
             messageId = incoming.messageId
         )
 
-        broadcastToChatRoom(
-            roomId = incoming.roomId,
-            outgoing = OutgoingWsMessage.NewMessage(savedMessage.asDto())
-        )
+        // Only broadcast if the message was newly created to avoid echoing duplicates on idempotency retries
+        if (isNew) {
+            broadcastToChatRoom(
+                roomId = incoming.roomId,
+                outgoing = OutgoingWsMessage.NewMessage(savedMessage.asDto())
+            )
+        } else {
+            // Send back only to the sender for acknowledgement
+            val outgoing = OutgoingWsMessage.NewMessage(savedMessage.asDto())
+            val payload = TextMessage(json.encodeToString(outgoing))
+            sessionsById.values.filter { it.userId == senderId }.forEach { it.sendMessage(payload) }
+        }
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

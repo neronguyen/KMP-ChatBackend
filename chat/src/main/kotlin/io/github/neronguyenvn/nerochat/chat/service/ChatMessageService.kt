@@ -12,6 +12,7 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatPartic
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
 import io.github.neronguyenvn.nerochat.domain.event.ChatEvent
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
+import io.github.neronguyenvn.nerochat.domain.exception.ConflictException
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -23,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 class ChatMessageService(
@@ -43,21 +45,33 @@ class ChatMessageService(
         senderId: UserId,
         content: String,
         messageId: ChatMessageId? = null
-    ): ChatMessage {
+    ): Pair<ChatMessage, Boolean> {
+        val targetMessageId = messageId?.asUUID() ?: UUID.randomUUID()
+
+        // Check for idempotency
+        val existingMessage = chatMessageRepository.findByIdOrNull(targetMessageId)
+        if (existingMessage != null) {
+            if (existingMessage.roomId != roomId.asUUID() || existingMessage.sender.userId != senderId.asUUID()) {
+                throw ConflictException("Message ID already exists for a different room or sender")
+            }
+            return Pair(existingMessage.asExternalModel(), false)
+        }
+
         chatRoomRepository.findChatRoomById(roomId.asUUID(), senderId.asUUID())
             ?: throw ChatRoomNotFoundException()
 
         val sender = chatParticipantRepository.findByIdOrNull(senderId.asUUID())
             ?: throw ChatParticipantNotFoundException(senderId)
 
-        val savedMessage = chatMessageRepository.saveAndFlush(
-            ChatMessageEntity(
-                id = messageId?.asUUID(),
-                roomId = roomId.asUUID(),
-                sender = sender,
-                content = content.trim(),
-            )
+        val entityToSave = ChatMessageEntity(
+            id = targetMessageId,
+            roomId = roomId.asUUID(),
+            sender = sender,
+            content = content.trim(),
         )
+
+        val savedMessage = chatMessageRepository.saveAndFlush(entityToSave)
+        savedMessage.markAsSaved()
 
         eventPublisher.publish(
             event = ChatEvent.NewMessage(
@@ -67,7 +81,7 @@ class ChatMessageService(
             )
         )
 
-        return savedMessage.asExternalModel()
+        return Pair(savedMessage.asExternalModel(), true)
     }
 
     @Transactional

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/chat/rooms")
@@ -48,6 +49,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
     fun getChatMessages(
         @PathVariable("roomId") roomId: ChatRoomId,
         @RequestParam("before", required = false) before: Instant? = null,
+        @RequestParam("beforeId", required = false) beforeId: UUID? = null,
     ): ChatMessageSliceDto {
         chatRoomService.getChatRoomById(roomId, requesterId)
             ?: throw ForbiddenException()
@@ -55,6 +57,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         return chatRoomService.getChatMessages(
             roomId = roomId,
             before = before,
+            beforeId = beforeId,
         )
     }
 

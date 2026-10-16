@@ -27,6 +27,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -46,10 +47,12 @@ class ChatRoomService(
     fun getChatMessages(
         roomId: ChatRoomId,
         before: Instant?,
+        beforeId: UUID?,
     ): ChatMessageSliceDto {
         val slice = chatMessageRepository.findByRoomIdBefore(
             roomId = roomId.asUUID(),
             before = before,
+            beforeId = beforeId,
             pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
         )
 
@@ -127,6 +130,7 @@ class ChatRoomService(
 
         val initialMessage = chatMessageRepository.save(
             ChatMessageEntity(
+                id = UUID.randomUUID(),
                 roomId = newRoom.id ?: error("ChatRoomId must be generated"),
                 sender = creator,
                 content = message.trim(),
