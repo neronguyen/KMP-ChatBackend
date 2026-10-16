@@ -17,7 +17,7 @@ interface ChatMessageRepository : JpaRepository<ChatMessageEntity, UUID> {
         JOIN FETCH m.sender
         WHERE m.roomId = :roomId
         AND (:before IS NULL OR m.createdAt < :before) 
-        ORDER BY m.createdAt DESC
+        ORDER BY m.createdAt DESC, m.id DESC
     """
     )
     fun findByRoomIdBefore(
@@ -36,7 +36,7 @@ interface ChatMessageRepository : JpaRepository<ChatMessageEntity, UUID> {
             SELECT m2.createdAt, m2.id
             FROM ChatMessageEntity m2
             WHERE m2.roomId = m.roomId
-            ORDER BY m2.createdAt DESC 
+            ORDER BY m2.createdAt DESC, m2.id DESC
             LIMIT 1
         )
     """

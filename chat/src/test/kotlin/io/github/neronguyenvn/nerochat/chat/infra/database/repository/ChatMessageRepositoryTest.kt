@@ -17,9 +17,12 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @SpringBootTest(
@@ -151,5 +154,50 @@ class ChatMessageRepositoryTest {
         assertThrows<DataIntegrityViolationException> {
             chatMessageRepository.saveAndFlush(conflictingMessage)
         }
+    }
+
+    @Test
+    fun `truncates createdAt to milliseconds and orders ties by id DESC`() {
+        val rawInstant = Instant.parse("2026-10-16T15:00:00.123456789Z")
+        val expectedMillisInstant = rawInstant.truncatedTo(ChronoUnit.MILLIS)
+
+        val earlierUuidV7 = UUID.fromString("019295f8-7a10-7000-8000-000000000001")
+        val laterUuidV7 = UUID.fromString("019295f8-7a10-7000-8000-000000000002")
+
+        chatMessageRepository.saveAndFlush(
+            ChatMessageEntity(
+                id = earlierUuidV7,
+                roomId = room.id!!,
+                sender = sender,
+                content = "First in same millisecond",
+                createdAt = rawInstant
+            )
+        )
+        chatMessageRepository.saveAndFlush(
+            ChatMessageEntity(
+                id = laterUuidV7,
+                roomId = room.id!!,
+                sender = sender,
+                content = "Second in same millisecond",
+                createdAt = rawInstant
+            )
+        )
+        entityManager.clear()
+
+        val slice = chatMessageRepository.findByRoomIdBefore(
+            roomId = room.id!!,
+            before = null,
+            pageable = PageRequest.of(0, 10)
+        )
+
+        assertEquals(2, slice.content.size)
+        assertEquals(laterUuidV7, slice.content[0].id)
+        assertEquals(earlierUuidV7, slice.content[1].id)
+        assertEquals(expectedMillisInstant, slice.content[0].createdAt)
+        assertEquals(0, slice.content[0].createdAt.nano % 1_000_000)
+
+        val latest = chatMessageRepository.findLatestMessagesByRoomIds(setOf(room.id!!))
+        assertEquals(1, latest.size)
+        assertEquals(laterUuidV7, latest.first().id)
     }
 }

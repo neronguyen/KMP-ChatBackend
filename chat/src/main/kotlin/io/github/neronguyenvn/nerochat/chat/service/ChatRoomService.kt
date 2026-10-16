@@ -27,6 +27,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -49,7 +50,7 @@ class ChatRoomService(
     ): ChatMessageSliceDto {
         val slice = chatMessageRepository.findByRoomIdBefore(
             roomId = roomId.asUUID(),
-            before = before,
+            before = before?.truncatedTo(ChronoUnit.MILLIS),
             pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
         )
 

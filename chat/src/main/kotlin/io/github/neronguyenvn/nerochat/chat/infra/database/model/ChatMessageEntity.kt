@@ -12,11 +12,12 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.PostLoad
 import jakarta.persistence.PostPersist
+import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import jakarta.persistence.Transient
-import org.hibernate.annotations.CreationTimestamp
 import org.springframework.data.domain.Persistable
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.time.ExperimentalTime
 import kotlin.time.toKotlinInstant
@@ -28,7 +29,7 @@ import kotlin.time.toKotlinInstant
     indexes = [
         Index(
             name = "idx_chat_message_chat_room_id_created_at",
-            columnList = "chat_room_id,created_at DESC"
+            columnList = "chat_room_id,created_at DESC,id DESC"
         )
     ]
 )
@@ -52,8 +53,8 @@ class ChatMessageEntity(
     @JoinColumn(name = "sender_id", nullable = false, updatable = false)
     var sender: ChatParticipantEntity,
 
-    @CreationTimestamp
-    var createdAt: Instant = Instant.now()
+    @Column(nullable = false, updatable = false)
+    var createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
 ) : Persistable<UUID> {
 
     @Transient
@@ -62,6 +63,11 @@ class ChatMessageEntity(
     override fun getId(): UUID = id
 
     override fun isNew(): Boolean = isNewEntity
+
+    @PrePersist
+    private fun truncateCreatedAtToMillis() {
+        createdAt = createdAt.truncatedTo(ChronoUnit.MILLIS)
+    }
 
     @PostPersist
     @PostLoad
