@@ -21,7 +21,11 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.time.ExperimentalTime
 import kotlin.time.toKotlinInstant
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import kotlin.uuid.toJavaUuid
 
+@OptIn(ExperimentalUuidApi::class)
 @Entity
 @Table(
     name = "chat_messages",
@@ -36,8 +40,8 @@ import kotlin.time.toKotlinInstant
 class ChatMessageEntity(
     @Id
     @Column(nullable = false, updatable = false)
-    @get:JvmName("getEntityId")
-    var id: UUID = UUID.randomUUID(),
+    @JvmField
+    final var id: UUID = Uuid.generateV7().toJavaUuid(),
 
     @Column(nullable = false)
     var content: String,

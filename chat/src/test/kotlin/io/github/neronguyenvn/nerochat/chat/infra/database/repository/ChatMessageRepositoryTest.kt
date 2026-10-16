@@ -121,6 +121,7 @@ class ChatMessageRepositoryTest {
         )
 
         val generatedId = messageEntity.id
+        assertEquals(7, generatedId.version())
         val saved = chatMessageRepository.saveAndFlush(messageEntity)
         assertEquals(generatedId, saved.id)
 

@@ -24,8 +24,11 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import kotlin.uuid.toJavaUuid
 
+@OptIn(ExperimentalUuidApi::class)
 @Service
 class ChatMessageService(
     private val chatRoomRepository: ChatRoomRepository,
@@ -68,7 +71,7 @@ class ChatMessageService(
 
         val savedMessage = chatMessageRepository.saveAndFlush(
             ChatMessageEntity(
-                id = targetMessageUuid ?: UUID.randomUUID(),
+                id = targetMessageUuid ?: Uuid.generateV7().toJavaUuid(),
                 roomId = roomUuid,
                 sender = sender,
                 content = content.trim(),
