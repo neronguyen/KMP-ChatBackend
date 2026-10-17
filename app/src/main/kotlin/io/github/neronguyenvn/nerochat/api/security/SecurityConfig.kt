@@ -29,6 +29,9 @@ class SecurityConfig {
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    // Error handling
+                    .requestMatchers("/error").permitAll()
+
                     // WebSocket handshake
                     .requestMatchers("/ws/**").permitAll()
 
