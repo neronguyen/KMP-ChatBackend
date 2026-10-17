@@ -48,11 +48,19 @@ class ChatRoomService(
         roomId: ChatRoomId,
         before: Instant?,
     ): ChatMessageSliceDto {
-        val slice = chatMessageRepository.findByRoomIdBefore(
-            roomId = roomId.asUUID(),
-            before = before?.truncatedTo(ChronoUnit.MILLIS),
-            pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
-        )
+        val pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
+        val slice = if (before == null) {
+            chatMessageRepository.findByRoomId(
+                roomId = roomId.asUUID(),
+                pageable = pageable
+            )
+        } else {
+            chatMessageRepository.findByRoomIdBefore(
+                roomId = roomId.asUUID(),
+                before = before.truncatedTo(ChronoUnit.MILLIS),
+                pageable = pageable
+            )
+        }
 
         return ChatMessageSliceDto(
             messages = slice.content.asReversed().map { it.asExternalModel().asDto() },

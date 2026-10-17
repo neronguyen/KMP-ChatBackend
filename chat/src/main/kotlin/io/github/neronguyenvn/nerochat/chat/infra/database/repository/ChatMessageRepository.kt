@@ -16,13 +16,27 @@ interface ChatMessageRepository : JpaRepository<ChatMessageEntity, UUID> {
         FROM ChatMessageEntity m
         JOIN FETCH m.sender
         WHERE m.roomId = :roomId
-        AND (:before IS NULL OR m.createdAt < :before) 
+        ORDER BY m.createdAt DESC, m.id DESC
+    """
+    )
+    fun findByRoomId(
+        roomId: UUID,
+        pageable: Pageable
+    ): Slice<ChatMessageEntity>
+
+    @Query(
+        """
+        SELECT m
+        FROM ChatMessageEntity m
+        JOIN FETCH m.sender
+        WHERE m.roomId = :roomId
+        AND m.createdAt < :before
         ORDER BY m.createdAt DESC, m.id DESC
     """
     )
     fun findByRoomIdBefore(
         roomId: UUID,
-        before: Instant?,
+        before: Instant,
         pageable: Pageable
     ): Slice<ChatMessageEntity>
 

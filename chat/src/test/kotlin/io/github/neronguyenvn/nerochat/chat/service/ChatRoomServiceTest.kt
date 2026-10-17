@@ -547,4 +547,47 @@ class ChatRoomServiceTest {
             )
         }
     }
+
+    @Test
+    fun `getChatMessages calls findByRoomId when before is null`() {
+        val roomId = ChatRoomId(UUID.randomUUID())
+        val message = ChatMessageEntity(
+            id = UUID.randomUUID(),
+            roomId = roomId.asUUID(),
+            sender = creatorEntity,
+            content = "Hello",
+            createdAt = Instant.now()
+        )
+        `when`(chatMessageRepository.findByRoomId(any(), any()))
+            .thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
+
+        val result = chatRoomService.getChatMessages(roomId = roomId, before = null)
+
+        assertEquals(1, result.messages.size)
+        assertEquals("Hello", result.messages.first().content)
+        verify(chatMessageRepository).findByRoomId(any(), any())
+        verify(chatMessageRepository, never()).findByRoomIdBefore(any(), any(), any())
+    }
+
+    @Test
+    fun `getChatMessages calls findByRoomIdBefore when before is provided`() {
+        val roomId = ChatRoomId(UUID.randomUUID())
+        val before = Instant.now()
+        val message = ChatMessageEntity(
+            id = UUID.randomUUID(),
+            roomId = roomId.asUUID(),
+            sender = creatorEntity,
+            content = "Old Hello",
+            createdAt = before.minusSeconds(60)
+        )
+        `when`(chatMessageRepository.findByRoomIdBefore(any(), any(), any()))
+            .thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
+
+        val result = chatRoomService.getChatMessages(roomId = roomId, before = before)
+
+        assertEquals(1, result.messages.size)
+        assertEquals("Old Hello", result.messages.first().content)
+        verify(chatMessageRepository).findByRoomIdBefore(any(), any(), any())
+        verify(chatMessageRepository, never()).findByRoomId(any(), any())
+    }
 }
