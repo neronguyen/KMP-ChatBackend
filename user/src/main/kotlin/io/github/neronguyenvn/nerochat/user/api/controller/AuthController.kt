@@ -1,11 +1,16 @@
 package io.github.neronguyenvn.nerochat.user.api.controller
 
 import io.github.neronguyenvn.nerochat.api.util.requesterId
+import io.github.neronguyenvn.nerochat.contract.auth.AuthenticatedUserDto
+import io.github.neronguyenvn.nerochat.contract.auth.UserDto
 import io.github.neronguyenvn.nerochat.user.api.config.IpRateLimiting
-import io.github.neronguyenvn.nerochat.user.api.dto.AuthenticatedUserDto
-import io.github.neronguyenvn.nerochat.user.api.dto.UserDto
-import io.github.neronguyenvn.nerochat.user.api.dto.asDto
-import io.github.neronguyenvn.nerochat.user.api.request.*
+import io.github.neronguyenvn.nerochat.user.api.mapper.asDto
+import io.github.neronguyenvn.nerochat.user.api.request.ChangePasswordRequest
+import io.github.neronguyenvn.nerochat.user.api.request.EmailRequest
+import io.github.neronguyenvn.nerochat.user.api.request.LoginRequest
+import io.github.neronguyenvn.nerochat.user.api.request.RefreshTokenRequest
+import io.github.neronguyenvn.nerochat.user.api.request.RegisterRequest
+import io.github.neronguyenvn.nerochat.user.api.request.ResetPasswordRequest
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
 import io.github.neronguyenvn.nerochat.user.service.AuthService
 import io.github.neronguyenvn.nerochat.user.service.EmailVerificationService
@@ -13,7 +18,13 @@ import io.github.neronguyenvn.nerochat.user.service.PasswordResetService
 import io.github.neronguyenvn.nerochat.user.service.ratelimiting.EmailRateLimitingService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/auth")

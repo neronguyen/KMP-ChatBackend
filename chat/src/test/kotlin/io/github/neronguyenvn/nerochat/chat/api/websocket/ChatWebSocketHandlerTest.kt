@@ -1,14 +1,14 @@
 package io.github.neronguyenvn.nerochat.chat.api.websocket
 
-import io.github.neronguyenvn.nerochat.chat.api.model.websocket.IncomingWsMessage
-import io.github.neronguyenvn.nerochat.chat.api.model.websocket.OutgoingWsMessage
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
+import io.github.neronguyenvn.nerochat.contract.chat.IncomingWsMessage
+import io.github.neronguyenvn.nerochat.contract.chat.OutgoingWsMessage
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -114,9 +114,9 @@ class ChatWebSocketHandlerTest {
 
         val incomingPayload = json.encodeToString<IncomingWsMessage>(
             IncomingWsMessage.NewMessage(
-                roomId = roomId,
+                roomId = roomId.value,
                 content = "Hello from Android",
-                messageId = clientMessageId
+                messageId = clientMessageId.value
             )
         )
 
@@ -159,9 +159,9 @@ class ChatWebSocketHandlerTest {
 
         val incomingPayload = json.encodeToString<IncomingWsMessage>(
             IncomingWsMessage.NewMessage(
-                roomId = roomId,
+                roomId = roomId.value,
                 content = "Conflicting message",
-                messageId = conflictingMessageId
+                messageId = conflictingMessageId.value
             )
         )
 
@@ -189,9 +189,9 @@ class ChatWebSocketHandlerTest {
 
         val incomingPayload = json.encodeToString<IncomingWsMessage>(
             IncomingWsMessage.NewMessage(
-                roomId = roomId,
+                roomId = roomId.value,
                 content = "Failing message",
-                messageId = clientMessageId
+                messageId = clientMessageId.value
             )
         )
 

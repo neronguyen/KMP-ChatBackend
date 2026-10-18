@@ -1,12 +1,13 @@
 package io.github.neronguyenvn.nerochat.chat.api.websocket
 
-import io.github.neronguyenvn.nerochat.chat.api.model.asDto
-import io.github.neronguyenvn.nerochat.chat.api.model.websocket.IncomingWsMessage
-import io.github.neronguyenvn.nerochat.chat.api.model.websocket.OutgoingWsMessage
+import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.chat.IncomingWsMessage
+import io.github.neronguyenvn.nerochat.contract.chat.OutgoingWsMessage
+import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.service.JwtService
@@ -230,18 +231,19 @@ class ChatWebSocketHandler(
         senderId: UserId,
         incoming: IncomingWsMessage.NewMessage,
     ) {
+        val roomId = ChatRoomId(incoming.roomId)
         val allowedChatRooms = roomIdsByUserId[senderId] ?: return
-        if (incoming.roomId !in allowedChatRooms) return
+        if (roomId !in allowedChatRooms) return
 
         val savedMessage = chatMessageService.sendMessage(
-            roomId = incoming.roomId,
+            roomId = roomId,
             senderId = senderId,
             content = incoming.content,
-            messageId = incoming.messageId
+            messageId = incoming.messageId?.let { ChatMessageId(it) }
         )
 
         broadcastToChatRoom(
-            roomId = incoming.roomId,
+            roomId = roomId,
             outgoing = OutgoingWsMessage.NewMessage(savedMessage.asDto())
         )
     }
@@ -251,8 +253,8 @@ class ChatWebSocketHandler(
         broadcastToChatRoom(
             roomId = event.roomId,
             outgoing = OutgoingWsMessage.MessageDeleted(
-                roomId = event.roomId,
-                messageId = event.messageId
+                roomId = event.roomId.value,
+                messageId = event.messageId.value
             )
         )
     }
@@ -274,7 +276,7 @@ class ChatWebSocketHandler(
         broadcastToChatRoom(
             roomId = event.roomId,
             outgoing = OutgoingWsMessage.ParticipantJoined(
-                roomId = event.roomId,
+                roomId = event.roomId.value,
                 newUsers = event.newUsers.map { it.asDto() },
             )
         )
@@ -300,7 +302,7 @@ class ChatWebSocketHandler(
         broadcastToChatRoom(
             roomId = event.roomId,
             outgoing = OutgoingWsMessage.ParticipantLeft(
-                roomId = event.roomId,
+                roomId = event.roomId.value,
                 leftUser = event.leftUser.asDto(),
             )
         )

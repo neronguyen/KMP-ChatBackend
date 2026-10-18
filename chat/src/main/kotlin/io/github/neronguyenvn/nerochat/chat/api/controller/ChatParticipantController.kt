@@ -1,10 +1,10 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.api.util.requesterId
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatParticipantDto
-import io.github.neronguyenvn.nerochat.chat.api.model.asDto
+import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.service.ChatParticipantService
+import io.github.neronguyenvn.nerochat.contract.chat.ChatParticipantDto
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam

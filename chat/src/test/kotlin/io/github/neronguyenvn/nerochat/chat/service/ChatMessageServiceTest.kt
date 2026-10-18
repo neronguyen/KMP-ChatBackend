@@ -1,13 +1,13 @@
 package io.github.neronguyenvn.nerochat.chat.service
 
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatParticipantEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessageRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.event.ChatEvent
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId

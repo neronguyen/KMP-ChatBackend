@@ -1,13 +1,13 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.api.util.requesterId
+import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
 import io.github.neronguyenvn.nerochat.chat.api.model.AddChatParticipantRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageSliceDto
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatRoomDto
 import io.github.neronguyenvn.nerochat.chat.api.model.CreateDirectChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.api.model.CreateGroupChatRoomRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.asDto
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomDto
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId

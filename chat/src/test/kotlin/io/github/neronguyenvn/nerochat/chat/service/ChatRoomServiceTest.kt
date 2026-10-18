@@ -4,7 +4,6 @@ import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatParticipantEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
@@ -12,6 +11,7 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.model.DirectPairKey
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessageRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -29,6 +29,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
 import java.time.Instant
 import java.util.Optional
 import java.util.UUID
@@ -558,15 +559,27 @@ class ChatRoomServiceTest {
             content = "Hello",
             createdAt = Instant.now()
         )
-        `when`(chatMessageRepository.findByRoomId(any(), any()))
+        `when`(
+            chatMessageRepository.findByRoomId(
+                any() ?: roomId.asUUID(),
+                any() ?: PageRequest.of(0, 20)
+            )
+        )
             .thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
 
         val result = chatRoomService.getChatMessages(roomId = roomId, before = null)
 
         assertEquals(1, result.messages.size)
         assertEquals("Hello", result.messages.first().content)
-        verify(chatMessageRepository).findByRoomId(any(), any())
-        verify(chatMessageRepository, never()).findByRoomIdBefore(any(), any(), any())
+        verify(chatMessageRepository).findByRoomId(
+            any() ?: roomId.asUUID(),
+            any() ?: PageRequest.of(0, 20)
+        )
+        verify(chatMessageRepository, never()).findByRoomIdBefore(
+            any() ?: roomId.asUUID(),
+            any() ?: Instant.EPOCH,
+            any() ?: PageRequest.of(0, 20)
+        )
     }
 
     @Test
@@ -580,14 +593,26 @@ class ChatRoomServiceTest {
             content = "Old Hello",
             createdAt = before.minusSeconds(60)
         )
-        `when`(chatMessageRepository.findByRoomIdBefore(any(), any(), any()))
-            .thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
+        `when`(
+            chatMessageRepository.findByRoomIdBefore(
+                any() ?: roomId.asUUID(),
+                any() ?: before,
+                any() ?: PageRequest.of(0, 20)
+            )
+        ).thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
 
         val result = chatRoomService.getChatMessages(roomId = roomId, before = before)
 
         assertEquals(1, result.messages.size)
         assertEquals("Old Hello", result.messages.first().content)
-        verify(chatMessageRepository).findByRoomIdBefore(any(), any(), any())
-        verify(chatMessageRepository, never()).findByRoomId(any(), any())
+        verify(chatMessageRepository).findByRoomIdBefore(
+            any() ?: roomId.asUUID(),
+            any() ?: before,
+            any() ?: PageRequest.of(0, 20)
+        )
+        verify(chatMessageRepository, never()).findByRoomId(
+            any() ?: roomId.asUUID(),
+            any() ?: PageRequest.of(0, 20)
+        )
     }
 }
