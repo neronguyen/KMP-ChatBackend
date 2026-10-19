@@ -5,6 +5,15 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        mavenLocal()
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/neronguyen/KMP-ChatContract")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: providers.gradleProperty("gpr.user").orNull
+                password = System.getenv("GITHUB_TOKEN") ?: providers.gradleProperty("gpr.key").orNull
+            }
+        }
     }
 }
 
@@ -12,7 +21,8 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "NeroChatBackendSpringBoot"
 
 val contractRepoDir = file("../KMP-NeroChatContract")
-if (contractRepoDir.exists()) {
+val useLocalContract = (providers.gradleProperty("useLocalContract").orNull != "false") && contractRepoDir.exists()
+if (useLocalContract) {
     includeBuild(contractRepoDir) {
         dependencySubstitution {
             substitute(module("io.github.neronguyenvn.nerochat.contract:contract-core")).using(
