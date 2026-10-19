@@ -34,6 +34,13 @@ class SecurityConfig(
                     // Error handling
                     .requestMatchers("/error").permitAll()
 
+                    // Swagger & OpenAPI documentation
+                    .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html"
+                    ).permitAll()
+
                     // WebSocket handshake
                     .requestMatchers("/ws/**").permitAll()
 

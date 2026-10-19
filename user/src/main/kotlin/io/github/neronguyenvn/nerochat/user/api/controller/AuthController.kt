@@ -26,6 +26,8 @@ import io.github.neronguyenvn.nerochat.user.service.PasswordResetService
 import io.github.neronguyenvn.nerochat.user.service.ratelimiting.EmailRateLimitingService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
+@Tag(name = "Auth", description = "Authentication & registration endpoints")
 @RestController
 @RequestMapping("/api/auth")
 class AuthController(
@@ -47,6 +50,7 @@ class AuthController(
      * Creates a user and requests verification email delivery, returning the user response.
      * Errors from [AuthService.register] propagate.
      */
+    @Operation(summary = "Register user", description = "Creates a new user and sends verification email")
     @PostMapping("/register")
     @IpRateLimiting
     @ApiErrors(
@@ -70,6 +74,7 @@ class AuthController(
      * Unknown emails are treated as successful attempts and also advance the limit. Returns 204
      * on success; other service and rate-limit errors propagate.
      */
+    @Operation(summary = "Resend verification email", description = "Requests another verification email under rate limit")
     @PostMapping("/resend-verification")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @IpRateLimiting
@@ -93,6 +98,7 @@ class AuthController(
      * Returns the verified user's profile and authentication tokens.
      * Errors from [AuthService.login] propagate.
      */
+    @Operation(summary = "Login user", description = "Authenticates credentials and returns JWT tokens")
     @PostMapping("/login")
     @IpRateLimiting
     @ApiErrors(
@@ -115,6 +121,7 @@ class AuthController(
      * Returns the user and replacement tokens for a stored refresh token.
      * Errors from [AuthService.refreshToken] propagate.
      */
+    @Operation(summary = "Refresh access token", description = "Issues a new access token using a refresh token")
     @PostMapping("/refresh-token")
     @IpRateLimiting
     @ApiErrors(
@@ -136,6 +143,7 @@ class AuthController(
      * Removes the supplied refresh token from storage; existing access tokens are not revoked.
      * Errors from [AuthService.logout] propagate.
      */
+    @Operation(summary = "Logout user", description = "Invalidates the refresh token")
     @PostMapping("/logout")
     @ApiErrors(
         AuthServerError.InvalidToken::class,
@@ -153,6 +161,7 @@ class AuthController(
      * Errors from [EmailVerificationService.verifyEmail] propagate.
      */
     // TODO: Keep authentication tokens out of request URLs.
+    @Operation(summary = "Verify email", description = "Verifies email address using verification token")
     @GetMapping("/verify-email")
     @ApiErrors(AuthServerError.InvalidToken::class)
     @Throws(InvalidTokenException::class)
@@ -166,6 +175,7 @@ class AuthController(
      * Requests a password-reset email and returns 204, including for unknown email addresses.
      * Other errors from [PasswordResetService.requestPasswordReset] propagate.
      */
+    @Operation(summary = "Forgot password", description = "Requests password reset email")
     @PostMapping("/forgot-password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @IpRateLimiting
@@ -189,6 +199,7 @@ class AuthController(
      * Resets the password and consumes the supplied token, revoking the user's refresh tokens.
      * Errors from [PasswordResetService.resetPassword] propagate.
      */
+    @Operation(summary = "Reset password", description = "Resets password using reset token")
     @PostMapping("/reset-password")
     @IpRateLimiting
     @ApiErrors(
@@ -211,6 +222,7 @@ class AuthController(
      * Changes the authenticated user's password after checking the current password.
      * Revokes their refresh tokens; errors from [PasswordResetService.changePassword] propagate.
      */
+    @Operation(summary = "Change password", description = "Changes authenticated user password")
     @PostMapping("/change-password")
     @ApiErrors(
         AuthServerError.Unauthorized::class,

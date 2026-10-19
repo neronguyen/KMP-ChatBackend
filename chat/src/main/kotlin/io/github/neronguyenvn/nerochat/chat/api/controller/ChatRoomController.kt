@@ -18,6 +18,8 @@ import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import jakarta.validation.Valid
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -28,10 +30,12 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
+@Tag(name = "Chat Rooms", description = "Chat room management")
 @RestController
 @RequestMapping("/api/chat/rooms")
 class ChatRoomController(private val chatRoomService: ChatRoomService) {
 
+    @Operation(summary = "Get user chat rooms", description = "Retrieves all chat rooms the requester is part of")
     @GetMapping
     @ApiErrors(ChatServerError.Unauthorized::class)
     fun getChatRooms(): List<ChatRoomDto> {
@@ -40,6 +44,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
             .map { it.asDto() }
     }
 
+    @Operation(summary = "Get chat room by ID", description = "Retrieves details of a specific chat room")
     @GetMapping("/{roomId}")
     @ApiErrors(
         ChatServerError.Unauthorized::class,
@@ -55,6 +60,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
             ?.asDto() ?: throw ChatRoomNotFoundException()
     }
 
+    @Operation(summary = "Get chat room messages", description = "Retrieves paginated messages for a chat room")
     @GetMapping("/{roomId}/messages")
     @ApiErrors(
         ChatServerError.Unauthorized::class,
@@ -75,6 +81,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         )
     }
 
+    @Operation(summary = "Create direct chat room", description = "Creates a 1-on-1 direct chat room")
     @PostMapping("/direct")
     @ApiErrors(
         ChatServerError.Unauthorized::class,
@@ -93,6 +100,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         ).asDto()
     }
 
+    @Operation(summary = "Create group chat room", description = "Creates a group chat room with multiple participants")
     @PostMapping("/group")
     @ApiErrors(
         ChatServerError.Unauthorized::class,
@@ -111,6 +119,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         ).asDto()
     }
 
+    @Operation(summary = "Add participants to group chat room", description = "Adds new participants to an existing group chat room")
     @PostMapping("/{roomId}/add")
     @ApiErrors(
         ChatServerError.Unauthorized::class,
@@ -138,6 +147,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         ).asDto()
     }
 
+    @Operation(summary = "Leave chat room", description = "Leaves a chat room")
     @DeleteMapping("/{roomId}/leave")
     @ApiErrors(
         ChatServerError.Unauthorized::class,

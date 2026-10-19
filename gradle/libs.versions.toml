@@ -6,6 +6,7 @@ spring-boot = "4.0.6"
 jwt = "0.12.6"
 redission = "4.5.0"
 contract = "0.0.1"
+springdoc = "3.1.1"
 
 [libraries]
 # Spring Boot Starters
@@ -45,6 +46,10 @@ validation-chat = { module = "io.github.neronguyenvn.nerochat.contract:validatio
 # Redisson
 redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-starter", version.ref = "redission" }
 redisson-spring-cache = { module = "org.redisson:redisson-spring-cache", version.ref = "redission" }
+
+# SpringDoc OpenAPI
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+swagger-annotations-jakarta = { module = "io.swagger.core.v3:swagger-annotations-jakarta", version = "2.2.55" }
 
 # Testing
 h2 = { module = "com.h2database:h2" }
