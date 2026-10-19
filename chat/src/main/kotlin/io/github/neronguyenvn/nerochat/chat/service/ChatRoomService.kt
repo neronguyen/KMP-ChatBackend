@@ -155,7 +155,7 @@ class ChatRoomService(
     @Transactional
     fun createGroupChatRoom(
         creatorId: UserId,
-        name: String,
+        name: String? = null,
         participantIds: List<UserId>,
     ): ChatRoom {
         val uniqueParticipantIds = participantIds.toSet()
@@ -182,7 +182,7 @@ class ChatRoomService(
         val groupRoom = chatRoomRepository.save(
             ChatRoomEntity(
                 type = ChatRoomType.GROUP,
-                name = name.trim(),
+                name = name?.trim()?.takeIf { it.isNotEmpty() },
                 creator = creator,
                 participants = allParticipants,
             )

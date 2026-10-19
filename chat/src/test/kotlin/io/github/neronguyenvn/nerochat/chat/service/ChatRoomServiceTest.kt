@@ -289,6 +289,33 @@ class ChatRoomServiceTest {
     }
 
     @Test
+    fun `creates group chat room successfully with null or blank name`() {
+        `when`(chatParticipantRepository.findById(creatorId.asUUID())).thenReturn(Optional.of(creatorEntity))
+        `when`(chatParticipantRepository.findByUserIdIn(setOf(targetUserId.asUUID(), user3Id.asUUID())))
+            .thenReturn(setOf(targetEntity, user3Entity))
+
+        val roomId = UUID.randomUUID()
+        val createdGroupEntity = ChatRoomEntity(
+            id = roomId,
+            type = ChatRoomType.GROUP,
+            name = null,
+            creator = creatorEntity,
+            participants = setOf(creatorEntity, targetEntity, user3Entity),
+            createdAt = Instant.now()
+        )
+        `when`(chatRoomRepository.save(any(ChatRoomEntity::class.java))).thenReturn(createdGroupEntity)
+
+        val result = chatRoomService.createGroupChatRoom(
+            creatorId = creatorId,
+            name = "   ",
+            participantIds = listOf(targetUserId, user3Id)
+        )
+
+        assertNotNull(result)
+        assertNull(result.name)
+    }
+
+    @Test
     fun `createGroupChatRoom throws InvalidChatRoomSizeException when fewer than 2 participants provided`() {
         assertThrows<InvalidChatRoomSizeException> {
             chatRoomService.createGroupChatRoom(

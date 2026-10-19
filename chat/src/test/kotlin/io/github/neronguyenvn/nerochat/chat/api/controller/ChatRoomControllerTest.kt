@@ -1,7 +1,7 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
-import io.github.neronguyenvn.nerochat.chat.api.model.CreateDirectChatRoomRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.CreateGroupChatRoomRequest
+import io.github.neronguyenvn.nerochat.contract.chat.CreateDirectChatRoomRequest
+import io.github.neronguyenvn.nerochat.contract.chat.CreateGroupChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom

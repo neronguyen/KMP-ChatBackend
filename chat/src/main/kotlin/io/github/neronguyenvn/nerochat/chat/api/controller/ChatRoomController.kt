@@ -3,9 +3,9 @@ package io.github.neronguyenvn.nerochat.chat.api.controller
 import io.github.neronguyenvn.nerochat.api.annotation.ApiErrors
 import io.github.neronguyenvn.nerochat.api.util.requesterId
 import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
-import io.github.neronguyenvn.nerochat.chat.api.model.AddChatParticipantRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.CreateDirectChatRoomRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.CreateGroupChatRoomRequest
+import io.github.neronguyenvn.nerochat.contract.chat.AddChatParticipantRequest
+import io.github.neronguyenvn.nerochat.contract.chat.CreateDirectChatRoomRequest
+import io.github.neronguyenvn.nerochat.contract.chat.CreateGroupChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
@@ -134,7 +134,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         return chatRoomService.addParticipantsToChatRoom(
             requesterId = requesterId,
             roomId = roomId,
-            userIds = body.userIds.toSet()
+            userIds = body.userIds.map(::UserId).toSet()
         ).asDto()
     }
 

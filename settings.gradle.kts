@@ -24,6 +24,15 @@ if (contractRepoDir.exists()) {
             substitute(module("io.github.neronguyenvn.nerochat.contract:contract-chat")).using(
                 project(":contract-chat")
             )
+            substitute(module("io.github.neronguyenvn.nerochat.contract:validation-core")).using(
+                project(":validation-core")
+            )
+            substitute(module("io.github.neronguyenvn.nerochat.contract:validation-auth")).using(
+                project(":validation-auth")
+            )
+            substitute(module("io.github.neronguyenvn.nerochat.contract:validation-chat")).using(
+                project(":validation-chat")
+            )
         }
     }
 }
