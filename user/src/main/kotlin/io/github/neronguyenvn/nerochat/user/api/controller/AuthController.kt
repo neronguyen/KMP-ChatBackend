@@ -1,8 +1,11 @@
 package io.github.neronguyenvn.nerochat.user.api.controller
 
+import io.github.neronguyenvn.nerochat.api.annotation.ApiErrors
 import io.github.neronguyenvn.nerochat.api.util.requesterId
 import io.github.neronguyenvn.nerochat.contract.auth.AuthenticatedUserDto
 import io.github.neronguyenvn.nerochat.contract.auth.UserDto
+import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
+import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.api.config.IpRateLimiting
 import io.github.neronguyenvn.nerochat.user.api.mapper.asDto
 import io.github.neronguyenvn.nerochat.user.api.request.ChangePasswordRequest
@@ -11,7 +14,12 @@ import io.github.neronguyenvn.nerochat.user.api.request.LoginRequest
 import io.github.neronguyenvn.nerochat.user.api.request.RefreshTokenRequest
 import io.github.neronguyenvn.nerochat.user.api.request.RegisterRequest
 import io.github.neronguyenvn.nerochat.user.api.request.ResetPasswordRequest
+import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
+import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
+import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
+import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordException
 import io.github.neronguyenvn.nerochat.user.service.AuthService
 import io.github.neronguyenvn.nerochat.user.service.EmailVerificationService
 import io.github.neronguyenvn.nerochat.user.service.PasswordResetService
@@ -41,6 +49,12 @@ class AuthController(
      */
     @PostMapping("/register")
     @IpRateLimiting
+    @ApiErrors(
+        AuthServerError.UserAlreadyExists::class,
+        AuthServerError.RateLimitExceeded::class,
+        AuthServerError.ValidationFailed::class,
+    )
+    @Throws(UserAlreadyExistsException::class)
     fun register(
         @Valid @RequestBody body: RegisterRequest
     ): UserDto {
@@ -59,6 +73,10 @@ class AuthController(
     @PostMapping("/resend-verification")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @IpRateLimiting
+    @ApiErrors(
+        AuthServerError.RateLimitExceeded::class,
+        AuthServerError.ValidationFailed::class,
+    )
     fun resendVerification(
         @Valid @RequestBody body: EmailRequest
     ) {
@@ -77,6 +95,13 @@ class AuthController(
      */
     @PostMapping("/login")
     @IpRateLimiting
+    @ApiErrors(
+        AuthServerError.InvalidCredentials::class,
+        AuthServerError.EmailNotVerified::class,
+        AuthServerError.RateLimitExceeded::class,
+        AuthServerError.ValidationFailed::class,
+    )
+    @Throws(InvalidCredentialsException::class, EmailNotVerifiedException::class)
     fun login(
         @Valid @RequestBody body: LoginRequest
     ): AuthenticatedUserDto {
@@ -92,6 +117,13 @@ class AuthController(
      */
     @PostMapping("/refresh-token")
     @IpRateLimiting
+    @ApiErrors(
+        AuthServerError.InvalidToken::class,
+        AuthServerError.UserNotFound::class,
+        AuthServerError.RateLimitExceeded::class,
+        AuthServerError.ValidationFailed::class,
+    )
+    @Throws(InvalidTokenException::class, UserNotFoundException::class)
     fun refreshToken(
         @Valid @RequestBody body: RefreshTokenRequest
     ): AuthenticatedUserDto {
@@ -105,6 +137,11 @@ class AuthController(
      * Errors from [AuthService.logout] propagate.
      */
     @PostMapping("/logout")
+    @ApiErrors(
+        AuthServerError.InvalidToken::class,
+        AuthServerError.ValidationFailed::class,
+    )
+    @Throws(InvalidTokenException::class)
     fun logout(
         @Valid @RequestBody body: RefreshTokenRequest
     ) {
@@ -117,6 +154,8 @@ class AuthController(
      */
     // TODO: Keep authentication tokens out of request URLs.
     @GetMapping("/verify-email")
+    @ApiErrors(AuthServerError.InvalidToken::class)
+    @Throws(InvalidTokenException::class)
     fun verifyEmail(
         @RequestParam token: String
     ) {
@@ -130,6 +169,10 @@ class AuthController(
     @PostMapping("/forgot-password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @IpRateLimiting
+    @ApiErrors(
+        AuthServerError.RateLimitExceeded::class,
+        AuthServerError.ValidationFailed::class,
+    )
     fun forgotPassword(
         @Valid @RequestBody body: EmailRequest
     ) {
@@ -147,6 +190,14 @@ class AuthController(
      * Errors from [PasswordResetService.resetPassword] propagate.
      */
     @PostMapping("/reset-password")
+    @IpRateLimiting
+    @ApiErrors(
+        AuthServerError.InvalidToken::class,
+        AuthServerError.SamePassword::class,
+        AuthServerError.RateLimitExceeded::class,
+        AuthServerError.ValidationFailed::class,
+    )
+    @Throws(InvalidTokenException::class, SamePasswordException::class)
     fun resetPassword(
         @Valid @RequestBody body: ResetPasswordRequest
     ) {
@@ -161,6 +212,18 @@ class AuthController(
      * Revokes their refresh tokens; errors from [PasswordResetService.changePassword] propagate.
      */
     @PostMapping("/change-password")
+    @ApiErrors(
+        AuthServerError.Unauthorized::class,
+        AuthServerError.WrongPassword::class,
+        AuthServerError.SamePassword::class,
+        AuthServerError.UserNotFound::class,
+        AuthServerError.ValidationFailed::class,
+    )
+    @Throws(
+        WrongPasswordException::class,
+        SamePasswordException::class,
+        UserNotFoundException::class
+    )
     fun changePassword(
         @Valid @RequestBody body: ChangePasswordRequest,
     ) {

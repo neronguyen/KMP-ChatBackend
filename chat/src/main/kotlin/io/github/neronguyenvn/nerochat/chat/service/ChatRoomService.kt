@@ -5,6 +5,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
@@ -221,7 +222,7 @@ class ChatRoomService(
 
         val users = userIds.map { userId ->
             if (userId in chatParticipantIds) {
-                throw ForbiddenException()
+                throw ParticipantAlreadyInRoomException(userId)
             }
 
             chatParticipantRepository.findByIdOrNull(userId.asUUID())

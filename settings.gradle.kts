@@ -15,6 +15,9 @@ val contractRepoDir = file("../KMP-NeroChatContract")
 if (contractRepoDir.exists()) {
     includeBuild(contractRepoDir) {
         dependencySubstitution {
+            substitute(module("io.github.neronguyenvn.nerochat.contract:contract-core")).using(
+                project(":contract-core")
+            )
             substitute(module("io.github.neronguyenvn.nerochat.contract:contract-auth")).using(
                 project(":contract-auth")
             )

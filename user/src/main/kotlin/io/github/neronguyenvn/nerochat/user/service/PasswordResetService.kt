@@ -124,7 +124,7 @@ class PasswordResetService(
         newPassword: String
     ) {
         val user = userRepository.findByIdOrNull(userId.asUUID())
-            ?: error("User cannot be null")
+            ?: throw UserNotFoundException()
 
         if (!passwordEncoder.matches(oldPassword, user.hashedPassword)) {
             throw WrongPasswordException()

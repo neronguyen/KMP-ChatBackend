@@ -1,22 +1,24 @@
 package io.github.neronguyenvn.nerochat.api.security
 
+import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
+import io.github.neronguyenvn.nerochat.contract.error.ServerError
+import jakarta.servlet.http.HttpServletResponse
+import kotlinx.serialization.json.Json
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.authentication.HttpStatusEntryPoint
+import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-class SecurityConfig {
+class SecurityConfig(
+    private val json: Json = Json { ignoreUnknownKeys = true }
+) {
 
-    /**
-     * Configures stateless JWT authentication with a 401 entry point and disables CSRF, form login,
-     * and HTTP Basic. Auth endpoints are public except change-password; other API routes require
-     * an authenticated principal. Requests outside the API are permitted.
-     */
     @Bean
     fun securityFilterChain(
         http: HttpSecurity,
@@ -50,9 +52,31 @@ class SecurityConfig {
                 UsernamePasswordAuthenticationFilter::class.java
             )
             .exceptionHandling { configurer ->
-                val unauthorized = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
-                configurer.authenticationEntryPoint(unauthorized)
+                configurer.authenticationEntryPoint(apiAuthenticationEntryPoint())
+                configurer.accessDeniedHandler(apiAccessDeniedHandler())
             }
             .build()
     }
+
+    private fun apiAuthenticationEntryPoint(): AuthenticationEntryPoint =
+        AuthenticationEntryPoint { _, response, _ ->
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            response.contentType = MediaType.APPLICATION_JSON_VALUE
+            val errorResponse = ApiErrorResponse(
+                code = ServerError.UNAUTHORIZED,
+                message = "Authentication required",
+            )
+            response.writer.write(json.encodeToString(errorResponse))
+        }
+
+    private fun apiAccessDeniedHandler(): AccessDeniedHandler =
+        AccessDeniedHandler { _, response, _ ->
+            response.status = HttpServletResponse.SC_FORBIDDEN
+            response.contentType = MediaType.APPLICATION_JSON_VALUE
+            val errorResponse = ApiErrorResponse(
+                code = ServerError.FORBIDDEN,
+                message = "Access denied",
+            )
+            response.writer.write(json.encodeToString(errorResponse))
+        }
 }

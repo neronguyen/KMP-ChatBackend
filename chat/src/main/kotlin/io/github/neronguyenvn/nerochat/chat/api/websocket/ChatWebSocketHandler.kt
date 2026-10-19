@@ -7,6 +7,7 @@ import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.chat.IncomingWsMessage
 import io.github.neronguyenvn.nerochat.contract.chat.OutgoingWsMessage
+import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -172,14 +173,14 @@ class ChatWebSocketHandler(
         } catch (e: SerializationException) {
             logger.warn("Payload decode error from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = "INVALID_JSON",
+                code = ChatServerError.InvalidJson.code,
                 message = "Malformed payload"
             )
             return
         } catch (e: IllegalArgumentException) {
             logger.warn("Payload decode error from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = "INVALID_JSON",
+                code = ChatServerError.InvalidJson.code,
                 message = "Malformed payload"
             )
             return
@@ -189,7 +190,7 @@ class ChatWebSocketHandler(
             when (incoming) {
                 is IncomingWsMessage.NewMessage -> {
                     handleIncomingNewMessage(
-                        senderId = userSession.userId,
+                        userSession = userSession,
                         incoming = incoming
                     )
                 }
@@ -197,43 +198,60 @@ class ChatWebSocketHandler(
         } catch (e: IllegalArgumentException) {
             logger.warn("Invalid message parameters from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = "INVALID_PAYLOAD",
+                code = ChatServerError.InvalidPayload.code,
                 message = "Invalid message parameters"
             )
         } catch (e: DuplicateMessageIdException) {
             logger.warn("Duplicate message ID from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = "DUPLICATE_MESSAGE_ID",
-                message = e.message ?: "Duplicate message ID"
+                code = ChatServerError.DuplicateMessageId.code,
+                message = e.message ?: "Duplicate message ID",
+                roomId = (incoming as? IncomingWsMessage.NewMessage)?.roomId,
+                messageId = (incoming as? IncomingWsMessage.NewMessage)?.messageId
             )
         } catch (e: Exception) {
             logger.error("Failed to handle WebSocket message from session ${session.id}", e)
             userSession.sendError(
-                code = "MESSAGE_SEND_FAILED",
-                message = "Failed to send message"
+                code = ChatServerError.MessageSendFailed.code,
+                message = "Failed to send message",
+                roomId = (incoming as? IncomingWsMessage.NewMessage)?.roomId,
+                messageId = (incoming as? IncomingWsMessage.NewMessage)?.messageId
             )
         }
     }
 
     private fun UserSession.sendError(
         code: String,
-        message: String
+        message: String,
+        roomId: String? = null,
+        messageId: String? = null,
     ) {
         val outgoing: OutgoingWsMessage = OutgoingWsMessage.Error(
             code = code,
-            message = message
+            message = message,
+            roomId = roomId,
+            messageId = messageId,
         )
         val payload = TextMessage(json.encodeToString(outgoing))
         sendMessage(payload)
     }
 
     private fun handleIncomingNewMessage(
-        senderId: UserId,
+        userSession: UserSession,
         incoming: IncomingWsMessage.NewMessage,
     ) {
+        val senderId = userSession.userId
         val roomId = ChatRoomId(incoming.roomId)
-        val allowedChatRooms = roomIdsByUserId[senderId] ?: return
-        if (roomId !in allowedChatRooms) return
+        val allowedChatRooms = roomIdsByUserId[senderId]
+        if (allowedChatRooms == null || roomId !in allowedChatRooms) {
+            userSession.sendError(
+                code = ChatServerError.ChatRoomNotFound.code,
+                message = "Chat room not found or access denied",
+                roomId = incoming.roomId,
+                messageId = incoming.messageId
+            )
+            return
+        }
 
         val savedMessage = chatMessageService.sendMessage(
             roomId = roomId,

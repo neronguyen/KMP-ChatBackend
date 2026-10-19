@@ -4,6 +4,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatParticipantEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
@@ -430,6 +431,28 @@ class ChatRoomServiceTest {
                 roomId = roomId,
                 requesterId = user3Id,
                 userIds = setOf(user3Id)
+            )
+        }
+    }
+
+    @Test
+    fun `addParticipantsToChatRoom throws ParticipantAlreadyInRoomException when participant is already in chat room`() {
+        val roomId = ChatRoomId(UUID.randomUUID())
+        val roomEntity = ChatRoomEntity(
+            id = roomId.asUUID(),
+            type = ChatRoomType.GROUP,
+            name = "Group Chat",
+            creator = creatorEntity,
+            participants = setOf(creatorEntity, targetEntity),
+            createdAt = Instant.now()
+        )
+        `when`(chatRoomRepository.findById(roomId.asUUID())).thenReturn(Optional.of(roomEntity))
+
+        assertThrows<ParticipantAlreadyInRoomException> {
+            chatRoomService.addParticipantsToChatRoom(
+                roomId = roomId,
+                requesterId = creatorId,
+                userIds = setOf(targetUserId)
             )
         }
     }

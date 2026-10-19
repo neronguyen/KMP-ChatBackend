@@ -35,6 +35,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 # Contracts
+contract-core = { module = "io.github.neronguyenvn.nerochat.contract:contract-core", version.ref = "contract" }
 contract-auth = { module = "io.github.neronguyenvn.nerochat.contract:contract-auth", version.ref = "contract" }
 contract-chat = { module = "io.github.neronguyenvn.nerochat.contract:contract-chat", version.ref = "contract" }
 
