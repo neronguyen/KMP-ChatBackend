@@ -5,8 +5,8 @@ import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
-import io.github.neronguyenvn.nerochat.contract.chat.IncomingWsMessage
-import io.github.neronguyenvn.nerochat.contract.chat.OutgoingWsMessage
+import io.github.neronguyenvn.nerochat.contract.chat.WsClientMessage
+import io.github.neronguyenvn.nerochat.contract.chat.WsServerEvent
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
@@ -169,7 +169,7 @@ class ChatWebSocketHandler(
         val userSession = sessionsById[session.id] ?: return
 
         val incoming = try {
-            json.decodeFromString<IncomingWsMessage>(message.payload)
+            json.decodeFromString<WsClientMessage>(message.payload)
         } catch (e: SerializationException) {
             logger.warn("Payload decode error from session ${session.id}: ${e.message}")
             userSession.sendError(
@@ -188,7 +188,7 @@ class ChatWebSocketHandler(
 
         try {
             when (incoming) {
-                is IncomingWsMessage.NewMessage -> {
+                is WsClientMessage.NewMessage -> {
                     handleIncomingNewMessage(
                         userSession = userSession,
                         incoming = incoming
@@ -206,16 +206,16 @@ class ChatWebSocketHandler(
             userSession.sendError(
                 code = ChatServerError.DuplicateMessageId.code,
                 message = e.message ?: "Duplicate message ID",
-                roomId = (incoming as? IncomingWsMessage.NewMessage)?.roomId,
-                messageId = (incoming as? IncomingWsMessage.NewMessage)?.messageId
+                roomId = (incoming as? WsClientMessage.NewMessage)?.roomId,
+                messageId = (incoming as? WsClientMessage.NewMessage)?.messageId
             )
         } catch (e: Exception) {
             logger.error("Failed to handle WebSocket message from session ${session.id}", e)
             userSession.sendError(
                 code = ChatServerError.MessageSendFailed.code,
                 message = "Failed to send message",
-                roomId = (incoming as? IncomingWsMessage.NewMessage)?.roomId,
-                messageId = (incoming as? IncomingWsMessage.NewMessage)?.messageId
+                roomId = (incoming as? WsClientMessage.NewMessage)?.roomId,
+                messageId = (incoming as? WsClientMessage.NewMessage)?.messageId
             )
         }
     }
@@ -226,19 +226,19 @@ class ChatWebSocketHandler(
         roomId: String? = null,
         messageId: String? = null,
     ) {
-        val outgoing: OutgoingWsMessage = OutgoingWsMessage.Error(
+        val event: WsServerEvent = WsServerEvent.Error(
             code = code,
             message = message,
             roomId = roomId,
             messageId = messageId,
         )
-        val payload = TextMessage(json.encodeToString(outgoing))
+        val payload = TextMessage(json.encodeToString(event))
         sendMessage(payload)
     }
 
     private fun handleIncomingNewMessage(
         userSession: UserSession,
-        incoming: IncomingWsMessage.NewMessage,
+        incoming: WsClientMessage.NewMessage,
     ) {
         val senderId = userSession.userId
         val roomId = ChatRoomId(incoming.roomId)
@@ -262,7 +262,7 @@ class ChatWebSocketHandler(
 
         broadcastToChatRoom(
             roomId = roomId,
-            outgoing = OutgoingWsMessage.NewMessage(savedMessage.asDto())
+            event = WsServerEvent.NewMessage(savedMessage.asDto())
         )
     }
 
@@ -270,7 +270,7 @@ class ChatWebSocketHandler(
     private fun onDeleteMessage(event: InternalChatEvent.MessageDeletedEvent) {
         broadcastToChatRoom(
             roomId = event.roomId,
-            outgoing = OutgoingWsMessage.MessageDeleted(
+            event = WsServerEvent.MessageDeleted(
                 roomId = event.roomId.value,
                 messageId = event.messageId.value
             )
@@ -293,7 +293,7 @@ class ChatWebSocketHandler(
 
         broadcastToChatRoom(
             roomId = event.roomId,
-            outgoing = OutgoingWsMessage.ParticipantJoined(
+            event = WsServerEvent.ParticipantJoined(
                 roomId = event.roomId.value,
                 newUsers = event.newUsers.map { it.asDto() },
             )
@@ -319,7 +319,7 @@ class ChatWebSocketHandler(
     private fun onLeftChatRoom(event: InternalChatEvent.ChatParticipantLeftEvent) {
         broadcastToChatRoom(
             roomId = event.roomId,
-            outgoing = OutgoingWsMessage.ParticipantLeft(
+            event = WsServerEvent.ParticipantLeft(
                 roomId = event.roomId.value,
                 leftUser = event.leftUser.asDto(),
             )
@@ -334,10 +334,10 @@ class ChatWebSocketHandler(
 
     private fun broadcastToChatRoom(
         roomId: ChatRoomId,
-        outgoing: OutgoingWsMessage
+        event: WsServerEvent
     ) {
         val sessionIds = sessionIdsByRoomId[roomId] ?: return
-        val payload = TextMessage(json.encodeToString(outgoing))
+        val payload = TextMessage(json.encodeToString(event))
 
         sessionIds.forEach { sessionId ->
             val session = sessionsById[sessionId] ?: return@forEach
