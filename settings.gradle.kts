@@ -2,16 +2,21 @@ pluginManagement {
     includeBuild("build-logic")
 }
 
+val githubActor = System.getenv("GITHUB_ACTOR") ?: providers.gradleProperty("gpr.user").orNull
+val githubToken = System.getenv("GITHUB_TOKEN") ?: providers.gradleProperty("gpr.key").orNull
+
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
         mavenLocal()
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/neronguyen/KMP-ChatContract")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR") ?: providers.gradleProperty("gpr.user").orNull
-                password = System.getenv("GITHUB_TOKEN") ?: providers.gradleProperty("gpr.key").orNull
+        if (githubActor != null && githubToken != null) {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/neronguyen/KMP-ChatContract")
+                credentials {
+                    username = githubActor
+                    password = githubToken
+                }
             }
         }
     }
@@ -23,6 +28,7 @@ rootProject.name = "NeroChatBackendSpringBoot"
 val contractRepoDir = file("../KMP-NeroChatContract")
 val useLocalContract = (providers.gradleProperty("useLocalContract").orNull != "false") && contractRepoDir.exists()
 if (useLocalContract) {
+    logger.lifecycle("Notice: Using local contract repository substitution from: {}", contractRepoDir.canonicalPath)
     includeBuild(contractRepoDir) {
         dependencySubstitution {
             substitute(module("io.github.neronguyenvn.nerochat.contract:contract-core")).using(

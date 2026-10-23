@@ -17,7 +17,7 @@ object PostmanCollectionGenerator {
 
         // Info
         collectionMap["info"] = mapOf(
-            "_postman_id" to UUID.randomUUID().toString(),
+            "_postman_id" to UUID.nameUUIDFromBytes((openApi.info?.title ?: "NeroChat API").toByteArray()).toString(),
             "name" to (openApi.info?.title ?: "NeroChat API"),
             "description" to (openApi.info?.description ?: "NeroChat REST API Collection generated from OpenAPI specification"),
             "schema" to "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -156,14 +156,17 @@ object PostmanCollectionGenerator {
         // Example responses
         val responses = mutableListOf<Map<String, Any?>>()
         operation.responses?.forEach { (statusCode, apiResponse) ->
+            val code = statusCode.toIntOrNull() ?: 200
+            val statusReason = org.springframework.http.HttpStatus.resolve(code)?.reasonPhrase ?: statusCode
+            val sampleBody = getSampleResponseBody(statusCode, apiResponse.description)
             responses.add(
                 mapOf(
                     "name" to "$statusCode ${apiResponse.description ?: ""}".trim(),
-                    "status" to (apiResponse.description ?: statusCode),
-                    "code" to (statusCode.toIntOrNull() ?: 200),
+                    "status" to statusReason,
+                    "code" to code,
                     "_postman_previewlanguage" to "json",
-                    "header" to listOf(mapOf("key" to "Content-Type", "value" to "application/json")),
-                    "body" to getSampleResponseBody(statusCode, apiResponse.description)
+                    "header" to if (sampleBody != null) listOf(mapOf("key" to "Content-Type", "value" to "application/json")) else emptyList<Map<String, String>>(),
+                    "body" to (sampleBody ?: "")
                 )
             )
         }
@@ -235,7 +238,7 @@ object PostmanCollectionGenerator {
               ]
             }
         """.trimIndent()
-        path.contains("/api/chat/rooms/") && path.endsWith("/participants") && method == "POST" -> """
+        path.contains("/api/chat/rooms/") && (path.endsWith("/participants") || path.endsWith("/add")) && method == "POST" -> """
             {
               "userIds": [
                 "00000000-0000-0000-0000-000000000000"
@@ -245,7 +248,8 @@ object PostmanCollectionGenerator {
         else -> null
     }
 
-    private fun getSampleResponseBody(statusCode: String, description: String?): String = when (statusCode) {
+    private fun getSampleResponseBody(statusCode: String, description: String?): String? = when (statusCode) {
+        "204" -> null
         "200", "201" -> """
             {
               "status": "success"

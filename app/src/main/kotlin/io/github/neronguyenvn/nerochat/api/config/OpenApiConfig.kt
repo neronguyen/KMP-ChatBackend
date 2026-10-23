@@ -20,15 +20,26 @@ import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import org.springdoc.core.customizers.OperationCustomizer
+import org.springdoc.core.utils.SpringDocUtils
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.method.HandlerMethod
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Configuration
+@OptIn(ExperimentalTime::class)
 class OpenApiConfig {
+
+    init {
+        SpringDocUtils.getConfig().replaceWithSchema(
+            Instant::class.java,
+            StringSchema().format("date-time").example("2026-10-23T18:45:18Z")
+        )
+    }
 
     companion object {
         const val SECURITY_SCHEME_NAME = "bearerAuth"
@@ -114,6 +125,7 @@ class OpenApiConfig {
         OperationCustomizer { operation, handlerMethod ->
             customizeApiErrors(operation, handlerMethod)
             customizeSecurity(operation, handlerMethod)
+            customizeParameters(operation)
             operation
         }
 
@@ -158,6 +170,16 @@ class OpenApiConfig {
             operation.security = listOf(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
         } else {
             operation.security = emptyList()
+        }
+    }
+
+    private fun customizeParameters(operation: Operation) {
+        operation.parameters?.forEach { parameter ->
+            if (parameter.`in` == "path" && parameter.name in listOf("roomId", "messageId", "userId")) {
+                val schema = parameter.schema ?: StringSchema()
+                schema.format = "uuid"
+                parameter.schema = schema
+            }
         }
     }
 

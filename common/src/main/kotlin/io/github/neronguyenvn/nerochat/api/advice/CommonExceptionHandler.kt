@@ -10,12 +10,16 @@ import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.validation.FieldError
+import org.springframework.web.ErrorResponse
+import org.springframework.web.ErrorResponseException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.server.ResponseStatusException
 
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE)
@@ -95,8 +99,32 @@ class CommonExceptionHandler {
             )
         )
 
+    @ExceptionHandler(AccessDeniedException::class)
+    fun onAccessDenied(e: AccessDeniedException) {
+        throw e
+    }
+
+    @ExceptionHandler(ErrorResponseException::class, ResponseStatusException::class)
+    fun onErrorResponse(e: Exception): ResponseEntity<ApiErrorResponse> {
+        val errorResponse = e as? ErrorResponse
+        val status = errorResponse?.statusCode ?: HttpStatus.INTERNAL_SERVER_ERROR
+        val code = if (status.is4xxClientError) ServerError.BAD_REQUEST else ServerError.INTERNAL_SERVER_ERROR
+        return ResponseEntity.status(status).body(
+            ApiErrorResponse(
+                code = code,
+                message = errorResponse?.body?.detail ?: e.message ?: "Request failed",
+            )
+        )
+    }
+
     @ExceptionHandler(Exception::class)
     fun onUnhandledException(e: Exception): ResponseEntity<ApiErrorResponse> {
+        if (e is AccessDeniedException) {
+            throw e
+        }
+        if (e is ErrorResponse) {
+            return onErrorResponse(e)
+        }
         logger.error("Unhandled exception occurred: ${e.message}", e)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
             ApiErrorResponse(

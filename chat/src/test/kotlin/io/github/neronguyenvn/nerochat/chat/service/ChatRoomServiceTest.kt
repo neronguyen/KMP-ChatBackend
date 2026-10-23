@@ -313,6 +313,10 @@ class ChatRoomServiceTest {
 
         assertNotNull(result)
         assertNull(result.name)
+
+        val entityCaptor = ArgumentCaptor.forClass(ChatRoomEntity::class.java)
+        verify(chatRoomRepository).save(entityCaptor.capture())
+        assertNull(entityCaptor.value.name)
     }
 
     @Test
