@@ -127,7 +127,7 @@ class AuthService(
         val hashedToken = hashToken(refreshToken)
 
         val user = userRepository.findByIdOrNull(userId.asUUID())
-            ?: throw UserNotFoundException()
+            ?: throw UserNotFoundException.byId()
 
         val deleted = refreshTokenRepository.deleteByUserIdAndHashedToken(userId.asUUID(), hashedToken)
         if (deleted == 0L) {
