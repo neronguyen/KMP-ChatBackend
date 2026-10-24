@@ -5,6 +5,8 @@ kotlinx-datetime = "0.8.0"
 spring-boot = "4.0.6"
 jwt = "0.12.6"
 redission = "4.5.0"
+contract = "0.1.0"
+springdoc = "3.1.1"
 
 [libraries]
 # Spring Boot Starters
@@ -33,9 +35,21 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref =
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
+# Contracts
+contract-core = { module = "io.github.neronguyenvn.nerochat.contract:contract-core", version.ref = "contract" }
+contract-auth = { module = "io.github.neronguyenvn.nerochat.contract:contract-auth", version.ref = "contract" }
+contract-chat = { module = "io.github.neronguyenvn.nerochat.contract:contract-chat", version.ref = "contract" }
+validation-core = { module = "io.github.neronguyenvn.nerochat.contract:validation-core", version.ref = "contract" }
+validation-auth = { module = "io.github.neronguyenvn.nerochat.contract:validation-auth", version.ref = "contract" }
+validation-chat = { module = "io.github.neronguyenvn.nerochat.contract:validation-chat", version.ref = "contract" }
+
 # Redisson
 redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-starter", version.ref = "redission" }
 redisson-spring-cache = { module = "org.redisson:redisson-spring-cache", version.ref = "redission" }
+
+# SpringDoc OpenAPI
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+swagger-annotations-jakarta = { module = "io.swagger.core.v3:swagger-annotations-jakarta", version = "2.2.55" }
 
 # Testing
 h2 = { module = "com.h2database:h2" }

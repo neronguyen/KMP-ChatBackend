@@ -4,7 +4,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatParticipantEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
@@ -12,6 +12,7 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.model.DirectPairKey
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessageRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -29,6 +30,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
 import java.time.Instant
 import java.util.Optional
 import java.util.UUID
@@ -287,6 +289,37 @@ class ChatRoomServiceTest {
     }
 
     @Test
+    fun `creates group chat room successfully with null or blank name`() {
+        `when`(chatParticipantRepository.findById(creatorId.asUUID())).thenReturn(Optional.of(creatorEntity))
+        `when`(chatParticipantRepository.findByUserIdIn(setOf(targetUserId.asUUID(), user3Id.asUUID())))
+            .thenReturn(setOf(targetEntity, user3Entity))
+
+        val roomId = UUID.randomUUID()
+        val createdGroupEntity = ChatRoomEntity(
+            id = roomId,
+            type = ChatRoomType.GROUP,
+            name = null,
+            creator = creatorEntity,
+            participants = setOf(creatorEntity, targetEntity, user3Entity),
+            createdAt = Instant.now()
+        )
+        `when`(chatRoomRepository.save(any(ChatRoomEntity::class.java))).thenReturn(createdGroupEntity)
+
+        val result = chatRoomService.createGroupChatRoom(
+            creatorId = creatorId,
+            name = "   ",
+            participantIds = listOf(targetUserId, user3Id)
+        )
+
+        assertNotNull(result)
+        assertNull(result.name)
+
+        val entityCaptor = ArgumentCaptor.forClass(ChatRoomEntity::class.java)
+        verify(chatRoomRepository).save(entityCaptor.capture())
+        assertNull(entityCaptor.value.name)
+    }
+
+    @Test
     fun `createGroupChatRoom throws InvalidChatRoomSizeException when fewer than 2 participants provided`() {
         assertThrows<InvalidChatRoomSizeException> {
             chatRoomService.createGroupChatRoom(
@@ -434,6 +467,28 @@ class ChatRoomServiceTest {
     }
 
     @Test
+    fun `addParticipantsToChatRoom throws ParticipantAlreadyInRoomException when participant is already in chat room`() {
+        val roomId = ChatRoomId(UUID.randomUUID())
+        val roomEntity = ChatRoomEntity(
+            id = roomId.asUUID(),
+            type = ChatRoomType.GROUP,
+            name = "Group Chat",
+            creator = creatorEntity,
+            participants = setOf(creatorEntity, targetEntity),
+            createdAt = Instant.now()
+        )
+        `when`(chatRoomRepository.findById(roomId.asUUID())).thenReturn(Optional.of(roomEntity))
+
+        assertThrows<ParticipantAlreadyInRoomException> {
+            chatRoomService.addParticipantsToChatRoom(
+                roomId = roomId,
+                requesterId = creatorId,
+                userIds = setOf(targetUserId)
+            )
+        }
+    }
+
+    @Test
     fun `removeParticipantFromChatRoom deletes direct chat room and publishes ChatParticipantLeftEvent`() {
         val roomId = ChatRoomId(UUID.randomUUID())
         val roomEntity = ChatRoomEntity(
@@ -558,15 +613,27 @@ class ChatRoomServiceTest {
             content = "Hello",
             createdAt = Instant.now()
         )
-        `when`(chatMessageRepository.findByRoomId(any(), any()))
+        `when`(
+            chatMessageRepository.findByRoomId(
+                any() ?: roomId.asUUID(),
+                any() ?: PageRequest.of(0, 20)
+            )
+        )
             .thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
 
         val result = chatRoomService.getChatMessages(roomId = roomId, before = null)
 
         assertEquals(1, result.messages.size)
         assertEquals("Hello", result.messages.first().content)
-        verify(chatMessageRepository).findByRoomId(any(), any())
-        verify(chatMessageRepository, never()).findByRoomIdBefore(any(), any(), any())
+        verify(chatMessageRepository).findByRoomId(
+            any() ?: roomId.asUUID(),
+            any() ?: PageRequest.of(0, 20)
+        )
+        verify(chatMessageRepository, never()).findByRoomIdBefore(
+            any() ?: roomId.asUUID(),
+            any() ?: Instant.EPOCH,
+            any() ?: PageRequest.of(0, 20)
+        )
     }
 
     @Test
@@ -580,14 +647,26 @@ class ChatRoomServiceTest {
             content = "Old Hello",
             createdAt = before.minusSeconds(60)
         )
-        `when`(chatMessageRepository.findByRoomIdBefore(any(), any(), any()))
-            .thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
+        `when`(
+            chatMessageRepository.findByRoomIdBefore(
+                any() ?: roomId.asUUID(),
+                any() ?: before,
+                any() ?: PageRequest.of(0, 20)
+            )
+        ).thenReturn(org.springframework.data.domain.SliceImpl(listOf(message)))
 
         val result = chatRoomService.getChatMessages(roomId = roomId, before = before)
 
         assertEquals(1, result.messages.size)
         assertEquals("Old Hello", result.messages.first().content)
-        verify(chatMessageRepository).findByRoomIdBefore(any(), any(), any())
-        verify(chatMessageRepository, never()).findByRoomId(any(), any())
+        verify(chatMessageRepository).findByRoomIdBefore(
+            any() ?: roomId.asUUID(),
+            any() ?: before,
+            any() ?: PageRequest.of(0, 20)
+        )
+        verify(chatMessageRepository, never()).findByRoomId(
+            any() ?: roomId.asUUID(),
+            any() ?: PageRequest.of(0, 20)
+        )
     }
 }

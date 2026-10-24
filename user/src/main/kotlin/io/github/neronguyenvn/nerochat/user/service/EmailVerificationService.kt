@@ -37,7 +37,7 @@ class EmailVerificationService(
     @Transactional
     fun createVerificationToken(email: String): AuthToken.EmailVerification {
         val user = userRepository.findByEmail(normalizeEmail(email))
-            ?: throw UserNotFoundException()
+            ?: throw UserNotFoundException.byEmail()
 
         authTokenRepository.invalidateEmailVerificationTokens(user)
 

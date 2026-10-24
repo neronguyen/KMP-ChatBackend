@@ -1,18 +1,25 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
+import io.github.neronguyenvn.nerochat.api.annotation.ApiErrors
 import io.github.neronguyenvn.nerochat.api.util.requesterId
-import io.github.neronguyenvn.nerochat.chat.api.model.AddChatParticipantRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageSliceDto
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatRoomDto
-import io.github.neronguyenvn.nerochat.chat.api.model.CreateDirectChatRoomRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.CreateGroupChatRoomRequest
-import io.github.neronguyenvn.nerochat.chat.api.model.asDto
+import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
+import io.github.neronguyenvn.nerochat.contract.chat.AddChatParticipantRequest
+import io.github.neronguyenvn.nerochat.contract.chat.CreateDirectChatRoomRequest
+import io.github.neronguyenvn.nerochat.contract.chat.CreateGroupChatRoomRequest
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomDto
+import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import jakarta.validation.Valid
-import org.springframework.http.HttpStatus
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -21,30 +28,46 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
+@Tag(name = "Chat Rooms", description = "Chat room management")
 @RestController
 @RequestMapping("/api/chat/rooms")
 class ChatRoomController(private val chatRoomService: ChatRoomService) {
 
+    @Operation(summary = "Get user chat rooms", description = "Retrieves all chat rooms the requester is part of")
     @GetMapping
+    @ApiErrors(ChatServerError.Unauthorized::class)
     fun getChatRooms(): List<ChatRoomDto> {
         return chatRoomService
             .findChatRoomsByUser(userId = requesterId)
             .map { it.asDto() }
     }
 
+    @Operation(summary = "Get chat room by ID", description = "Retrieves details of a specific chat room")
     @GetMapping("/{roomId}")
+    @ApiErrors(
+        ChatServerError.Unauthorized::class,
+        ChatServerError.BadRequest::class,
+        ChatServerError.ChatRoomNotFound::class,
+    )
+    @Throws(ChatRoomNotFoundException::class)
     fun getChatRoom(
         @PathVariable("roomId") roomId: ChatRoomId,
     ): ChatRoomDto {
         return chatRoomService
             .getChatRoomById(roomId = roomId, requesterId = requesterId)
-            ?.asDto() ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
+            ?.asDto() ?: throw ChatRoomNotFoundException()
     }
 
+    @Operation(summary = "Get chat room messages", description = "Retrieves paginated messages for a chat room")
     @GetMapping("/{roomId}/messages")
+    @ApiErrors(
+        ChatServerError.Unauthorized::class,
+        ChatServerError.BadRequest::class,
+        ChatServerError.Forbidden::class,
+    )
+    @Throws(ForbiddenException::class)
     fun getChatMessages(
         @PathVariable("roomId") roomId: ChatRoomId,
         @RequestParam("before", required = false) before: Instant? = null,
@@ -58,7 +81,15 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         )
     }
 
+    @Operation(summary = "Create direct chat room", description = "Creates a 1-on-1 direct chat room")
     @PostMapping("/direct")
+    @ApiErrors(
+        ChatServerError.Unauthorized::class,
+        ChatServerError.ValidationFailed::class,
+        ChatServerError.ChatParticipantNotFound::class,
+        ChatServerError.InvalidChatRoomSize::class,
+    )
+    @Throws(ChatParticipantNotFoundException::class, InvalidChatRoomSizeException::class)
     fun createDirectChatRoom(
         @Valid @RequestBody body: CreateDirectChatRoomRequest,
     ): ChatRoomDto {
@@ -69,7 +100,15 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         ).asDto()
     }
 
+    @Operation(summary = "Create group chat room", description = "Creates a group chat room with multiple participants")
     @PostMapping("/group")
+    @ApiErrors(
+        ChatServerError.Unauthorized::class,
+        ChatServerError.ValidationFailed::class,
+        ChatServerError.ChatParticipantNotFound::class,
+        ChatServerError.InvalidChatRoomSize::class,
+    )
+    @Throws(ChatParticipantNotFoundException::class, InvalidChatRoomSizeException::class)
     fun createGroupChatRoom(
         @Valid @RequestBody body: CreateGroupChatRoomRequest,
     ): ChatRoomDto {
@@ -80,7 +119,23 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         ).asDto()
     }
 
+    @Operation(summary = "Add participants to group chat room", description = "Adds new participants to an existing group chat room")
     @PostMapping("/{roomId}/add")
+    @ApiErrors(
+        ChatServerError.Unauthorized::class,
+        ChatServerError.BadRequest::class,
+        ChatServerError.ValidationFailed::class,
+        ChatServerError.Forbidden::class,
+        ChatServerError.ChatRoomNotFound::class,
+        ChatServerError.ChatParticipantNotFound::class,
+        ChatServerError.ParticipantAlreadyInRoom::class,
+    )
+    @Throws(
+        ChatRoomNotFoundException::class,
+        ChatParticipantNotFoundException::class,
+        ForbiddenException::class,
+        ParticipantAlreadyInRoomException::class,
+    )
     fun addParticipants(
         @PathVariable("roomId") roomId: ChatRoomId,
         @Valid @RequestBody body: AddChatParticipantRequest,
@@ -88,11 +143,19 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         return chatRoomService.addParticipantsToChatRoom(
             requesterId = requesterId,
             roomId = roomId,
-            userIds = body.userIds.toSet()
+            userIds = body.userIds.map(::UserId).toSet()
         ).asDto()
     }
 
+    @Operation(summary = "Leave chat room", description = "Leaves a chat room")
     @DeleteMapping("/{roomId}/leave")
+    @ApiErrors(
+        ChatServerError.Unauthorized::class,
+        ChatServerError.BadRequest::class,
+        ChatServerError.ChatRoomNotFound::class,
+        ChatServerError.ChatParticipantNotFound::class,
+    )
+    @Throws(ChatRoomNotFoundException::class, ChatParticipantNotFoundException::class)
     fun leaveChatRoom(
         @PathVariable("roomId") roomId: ChatRoomId,
     ) {

@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.chat.domain.model
 
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant

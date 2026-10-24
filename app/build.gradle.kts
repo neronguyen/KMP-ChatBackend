@@ -10,6 +10,10 @@ dependencies {
     implementation(projects.chat)
     implementation(projects.notification)
 
+    implementation(libs.contract.core)
+    implementation(libs.contract.auth)
+    implementation(libs.contract.chat)
+
     implementation(platform(libs.spring.boot.dependencies))
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.security)
@@ -20,6 +24,12 @@ dependencies {
 
     implementation(libs.redisson.spring.boot.starter)
     implementation(libs.redisson.spring.cache)
+
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
+
+    testImplementation(libs.spring.boot.starter.test)
+    testRuntimeOnly(libs.h2)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 kotlin {
@@ -27,5 +37,19 @@ kotlin {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("export")
+    }
+    systemProperty("project.rootDir", rootProject.projectDir.absolutePath)
+}
+
+tasks.register<Test>("exportApiDocs") {
+    description = "Exports OpenAPI specification and Postman collection to the docs directory."
+    group = "documentation"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform {
+        includeTags("export")
+    }
+    systemProperty("project.rootDir", rootProject.projectDir.absolutePath)
 }

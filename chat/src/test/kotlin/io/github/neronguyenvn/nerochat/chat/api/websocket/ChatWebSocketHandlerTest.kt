@@ -1,14 +1,14 @@
 package io.github.neronguyenvn.nerochat.chat.api.websocket
 
-import io.github.neronguyenvn.nerochat.chat.api.model.websocket.IncomingWsMessage
-import io.github.neronguyenvn.nerochat.chat.api.model.websocket.OutgoingWsMessage
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
+import io.github.neronguyenvn.nerochat.contract.chat.WsClientMessage
+import io.github.neronguyenvn.nerochat.contract.chat.WsServerEvent
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -112,11 +112,11 @@ class ChatWebSocketHandlerTest {
             )
         ).thenReturn(savedMessage)
 
-        val incomingPayload = json.encodeToString<IncomingWsMessage>(
-            IncomingWsMessage.NewMessage(
-                roomId = roomId,
+        val incomingPayload = json.encodeToString<WsClientMessage>(
+            WsClientMessage.NewMessage(
+                roomId = roomId.value,
                 content = "Hello from Android",
-                messageId = clientMessageId
+                messageId = clientMessageId.value
             )
         )
 
@@ -125,9 +125,9 @@ class ChatWebSocketHandlerTest {
         val messageCaptor = ArgumentCaptor.forClass(TextMessage::class.java)
         verify(session).sendMessage(messageCaptor.capture())
 
-        val outgoing = json.decodeFromString<OutgoingWsMessage>(messageCaptor.value.payload)
-        assertTrue(outgoing is OutgoingWsMessage.NewMessage)
-        val newMessage = outgoing as OutgoingWsMessage.NewMessage
+        val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
+        assertTrue(event is WsServerEvent.NewMessage)
+        val newMessage = event as WsServerEvent.NewMessage
         assertEquals(clientMessageId.value, newMessage.message.id)
         assertEquals(roomId.value, newMessage.message.roomId)
         assertEquals("Hello from Android", newMessage.message.content)
@@ -140,9 +140,9 @@ class ChatWebSocketHandlerTest {
         val messageCaptor = ArgumentCaptor.forClass(TextMessage::class.java)
         verify(session).sendMessage(messageCaptor.capture())
 
-        val outgoing = json.decodeFromString<OutgoingWsMessage>(messageCaptor.value.payload)
-        assertTrue(outgoing is OutgoingWsMessage.Error)
-        assertEquals("INVALID_JSON", (outgoing as OutgoingWsMessage.Error).code)
+        val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
+        assertTrue(event is WsServerEvent.Error)
+        assertEquals("INVALID_JSON", (event as WsServerEvent.Error).code)
     }
 
     @Test
@@ -157,11 +157,11 @@ class ChatWebSocketHandlerTest {
             )
         ).thenThrow(DuplicateMessageIdException(conflictingMessageId))
 
-        val incomingPayload = json.encodeToString<IncomingWsMessage>(
-            IncomingWsMessage.NewMessage(
-                roomId = roomId,
+        val incomingPayload = json.encodeToString<WsClientMessage>(
+            WsClientMessage.NewMessage(
+                roomId = roomId.value,
                 content = "Conflicting message",
-                messageId = conflictingMessageId
+                messageId = conflictingMessageId.value
             )
         )
 
@@ -170,9 +170,9 @@ class ChatWebSocketHandlerTest {
         val messageCaptor = ArgumentCaptor.forClass(TextMessage::class.java)
         verify(session).sendMessage(messageCaptor.capture())
 
-        val outgoing = json.decodeFromString<OutgoingWsMessage>(messageCaptor.value.payload)
-        assertTrue(outgoing is OutgoingWsMessage.Error)
-        assertEquals("DUPLICATE_MESSAGE_ID", (outgoing as OutgoingWsMessage.Error).code)
+        val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
+        assertTrue(event is WsServerEvent.Error)
+        assertEquals("DUPLICATE_MESSAGE_ID", (event as WsServerEvent.Error).code)
     }
 
     @Test
@@ -187,11 +187,11 @@ class ChatWebSocketHandlerTest {
             )
         ).thenThrow(RuntimeException("Database unavailable"))
 
-        val incomingPayload = json.encodeToString<IncomingWsMessage>(
-            IncomingWsMessage.NewMessage(
-                roomId = roomId,
+        val incomingPayload = json.encodeToString<WsClientMessage>(
+            WsClientMessage.NewMessage(
+                roomId = roomId.value,
                 content = "Failing message",
-                messageId = clientMessageId
+                messageId = clientMessageId.value
             )
         )
 
@@ -200,8 +200,8 @@ class ChatWebSocketHandlerTest {
         val messageCaptor = ArgumentCaptor.forClass(TextMessage::class.java)
         verify(session).sendMessage(messageCaptor.capture())
 
-        val outgoing = json.decodeFromString<OutgoingWsMessage>(messageCaptor.value.payload)
-        assertTrue(outgoing is OutgoingWsMessage.Error)
-        assertEquals("MESSAGE_SEND_FAILED", (outgoing as OutgoingWsMessage.Error).code)
+        val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
+        assertTrue(event is WsServerEvent.Error)
+        assertEquals("MESSAGE_SEND_FAILED", (event as WsServerEvent.Error).code)
     }
 }

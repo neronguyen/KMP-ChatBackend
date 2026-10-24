@@ -1,96 +1,99 @@
 package io.github.neronguyenvn.nerochat.user.api.advice
 
+import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
+import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
-import io.github.neronguyenvn.nerochat.user.domain.exception.*
+import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
+import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.RateLimitExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
+import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
+import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordException
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 class AuthExceptionHandler {
 
-    /**
-     * Returns a 400 response with all validation messages and the first as the summary.
-     * Missing messages become `Invalid value`.
-     *
-     * @throws NoSuchElementException if the binding result contains no errors.
-     */
-    @ExceptionHandler(MethodArgumentNotValidException::class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun onMethodArgumentNotValid(e: MethodArgumentNotValidException): Map<String, Any> {
-        val errors = e.bindingResult.allErrors.map {
-            it.defaultMessage ?: "Invalid value"
-        }
-        return mapOf(
-            "code" to "METHOD_ARGUMENT_NOT_VALID",
-            "message" to errors.first(),
-            "errors" to errors
-        )
-    }
-
-    /** Returns a 401 response with code `INVALID_TOKEN` and the exception message. */
     @ExceptionHandler(InvalidTokenException::class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun onInvalidToken(e: InvalidTokenException) = mapOf(
-        "code" to "INVALID_TOKEN",
-        "message" to e.message
-    )
+    fun onInvalidToken(e: InvalidTokenException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            ApiErrorResponse(
+                code = AuthServerError.InvalidToken.code,
+                message = e.message,
+            )
+        )
 
-    /** Returns a 401 response with code `USER_NOT_FOUND` and the exception message. */
     @ExceptionHandler(UserNotFoundException::class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun onUserNotFound(e: UserNotFoundException) = mapOf(
-        "code" to "USER_NOT_FOUND",
-        "message" to e.message
-    )
+    fun onUserNotFound(e: UserNotFoundException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+            ApiErrorResponse(
+                code = AuthServerError.UserNotFound.code,
+                message = e.message,
+            )
+        )
 
-    /** Returns a 401 response with code `WRONG_PASSWORD` and the exception message. */
     @ExceptionHandler(WrongPasswordException::class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun onPasswordMismatch(e: WrongPasswordException) = mapOf(
-        "code" to "WRONG_PASSWORD",
-        "message" to e.message
-    )
+    fun onPasswordMismatch(e: WrongPasswordException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            ApiErrorResponse(
+                code = AuthServerError.WrongPassword.code,
+                message = e.message,
+            )
+        )
 
-    /** Returns a 401 response with code `EMAIL_NOT_VERIFIED` and the exception message. */
     @ExceptionHandler(EmailNotVerifiedException::class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun onEmailNotVerified(e: EmailNotVerifiedException) = mapOf(
-        "code" to "EMAIL_NOT_VERIFIED",
-        "message" to e.message
-    )
+    fun onEmailNotVerified(e: EmailNotVerifiedException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+            ApiErrorResponse(
+                code = AuthServerError.EmailNotVerified.code,
+                message = e.message,
+            )
+        )
 
-    /** Returns a 401 response with code `INVALID_CREDENTIALS` and the exception message. */
     @ExceptionHandler(InvalidCredentialsException::class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun onInvalidCredentials(e: InvalidCredentialsException) = mapOf(
-        "code" to "INVALID_CREDENTIALS",
-        "message" to e.message
-    )
+    fun onInvalidCredentials(e: InvalidCredentialsException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            ApiErrorResponse(
+                code = AuthServerError.InvalidCredentials.code,
+                message = e.message,
+            )
+        )
 
-    /** Returns a 409 response with code `SAME_PASSWORD` and the exception message. */
     @ExceptionHandler(SamePasswordException::class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    fun onSamePassword(e: SamePasswordException) = mapOf(
-        "code" to "SAME_PASSWORD",
-        "message" to e.message
-    )
+    fun onSamePassword(e: SamePasswordException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ApiErrorResponse(
+                code = AuthServerError.SamePassword.code,
+                message = e.message,
+            )
+        )
 
-    /** Returns a 409 response with code `USER_ALREADY_EXISTS` and the exception message. */
     @ExceptionHandler(UserAlreadyExistsException::class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    fun onUserAlreadyExists(e: UserAlreadyExistsException) = mapOf(
-        "code" to "USER_ALREADY_EXISTS",
-        "message" to e.message
-    )
+    fun onUserAlreadyExists(e: UserAlreadyExistsException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ApiErrorResponse(
+                code = AuthServerError.UserAlreadyExists.code,
+                message = e.message,
+            )
+        )
 
-    /** Returns a 429 response with code `RATE_LIMIT_EXCEEDED` and the exception message. */
     @ExceptionHandler(RateLimitExceededException::class)
-    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
-    fun onRateLimitExceeded(e: RateLimitExceededException) = mapOf(
-        "code" to "RATE_LIMIT_EXCEEDED",
-        "message" to e.message
-    )
+    fun onRateLimitExceeded(e: RateLimitExceededException): ResponseEntity<ApiErrorResponse> =
+        ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            .header(HttpHeaders.RETRY_AFTER, e.resetsInSeconds.toString())
+            .body(
+                ApiErrorResponse(
+                    code = AuthServerError.RateLimitExceeded.code,
+                    message = e.message,
+                    retryAfterSeconds = e.resetsInSeconds,
+                )
+            )
 }

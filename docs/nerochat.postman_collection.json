@@ -1,0 +1,1194 @@
+{
+  "info" : {
+    "_postman_id" : "979bcee3-67de-3479-9962-484f7c911f5f",
+    "name" : "NeroChat API",
+    "description" : "REST API and WebSocket error contracts for NeroChat messaging backend",
+    "schema" : "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable" : [ {
+    "key" : "baseUrl",
+    "value" : "http://localhost:8080",
+    "type" : "string"
+  }, {
+    "key" : "bearerToken",
+    "value" : "",
+    "type" : "string"
+  } ],
+  "item" : [ {
+    "name" : "Chat Rooms",
+    "item" : [ {
+      "name" : "Add participants to group chat room",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"userIds\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/rooms/:roomId/add",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "rooms", ":roomId", "add" ],
+          "variable" : [ {
+            "key" : "roomId",
+            "value" : "00000000-0000-0000-0000-000000000000",
+            "description" : ""
+          } ]
+        },
+        "description" : "Adds new participants to an existing group chat room"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`, `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
+      }, {
+        "name" : "403 Forbidden. Contract error codes: `FORBIDDEN`",
+        "status" : "Forbidden",
+        "code" : 403,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `CHAT_ROOM_NOT_FOUND`, `CHAT_PARTICIPANT_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"CHAT_ROOM_NOT_FOUND\",\n  \"message\" : \"Chat room not found\"\n}"
+      }, {
+        "name" : "409 Conflict. Contract error codes: `PARTICIPANT_ALREADY_IN_ROOM`",
+        "status" : "Conflict",
+        "code" : 409,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"PARTICIPANT_ALREADY_IN_ROOM\",\n  \"message\" : \"Participant is already in the chat room\"\n}"
+      } ]
+    }, {
+      "name" : "Create group chat room",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"name\": \"Team Chat\",\n  \"participantIds\": [\n    \"00000000-0000-0000-0000-000000000000\",\n    \"11111111-1111-1111-1111-111111111111\"\n  ]\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/rooms/group",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "rooms", "group" ]
+        },
+        "description" : "Creates a group chat room with multiple participants"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`, `INVALID_CHAT_ROOM_SIZE`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `CHAT_PARTICIPANT_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"CHAT_PARTICIPANT_NOT_FOUND\",\n  \"message\" : \"Chat participant not found\"\n}"
+      } ]
+    }, {
+      "name" : "Create direct chat room",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"targetUserId\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Hello!\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/rooms/direct",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "rooms", "direct" ]
+        },
+        "description" : "Creates a 1-on-1 direct chat room"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`, `INVALID_CHAT_ROOM_SIZE`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `CHAT_PARTICIPANT_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"CHAT_PARTICIPANT_NOT_FOUND\",\n  \"message\" : \"Chat participant not found\"\n}"
+      } ]
+    }, {
+      "name" : "Get user chat rooms",
+      "request" : {
+        "method" : "GET",
+        "header" : [ ],
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/rooms",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "rooms" ]
+        },
+        "description" : "Retrieves all chat rooms the requester is part of"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "[ {\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n} ]"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      } ]
+    }, {
+      "name" : "Get chat room by ID",
+      "request" : {
+        "method" : "GET",
+        "header" : [ ],
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/rooms/:roomId",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "rooms", ":roomId" ],
+          "variable" : [ {
+            "key" : "roomId",
+            "value" : "00000000-0000-0000-0000-000000000000",
+            "description" : ""
+          } ]
+        },
+        "description" : "Retrieves details of a specific chat room"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `CHAT_ROOM_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"CHAT_ROOM_NOT_FOUND\",\n  \"message\" : \"Chat room not found\"\n}"
+      } ]
+    }, {
+      "name" : "Get chat room messages",
+      "request" : {
+        "method" : "GET",
+        "header" : [ ],
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/rooms/:roomId/messages?before=2026-10-19T00:00:00Z",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "rooms", ":roomId", "messages" ],
+          "query" : [ {
+            "key" : "before",
+            "value" : "2026-10-19T00:00:00Z",
+            "description" : ""
+          } ],
+          "variable" : [ {
+            "key" : "roomId",
+            "value" : "00000000-0000-0000-0000-000000000000",
+            "description" : ""
+          } ]
+        },
+        "description" : "Retrieves paginated messages for a chat room"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"messages\" : [ {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  } ],\n  \"hasMore\" : false\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
+      }, {
+        "name" : "403 Forbidden. Contract error codes: `FORBIDDEN`",
+        "status" : "Forbidden",
+        "code" : 403,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
+      } ]
+    }, {
+      "name" : "Leave chat room",
+      "request" : {
+        "method" : "DELETE",
+        "header" : [ ],
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/rooms/:roomId/leave",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "rooms", ":roomId", "leave" ],
+          "variable" : [ {
+            "key" : "roomId",
+            "value" : "00000000-0000-0000-0000-000000000000",
+            "description" : ""
+          } ]
+        },
+        "description" : "Leaves a chat room"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `CHAT_ROOM_NOT_FOUND`, `CHAT_PARTICIPANT_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"CHAT_ROOM_NOT_FOUND\",\n  \"message\" : \"Chat room not found\"\n}"
+      } ]
+    } ]
+  }, {
+    "name" : "Auth",
+    "item" : [ {
+      "name" : "Reset password",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"token\": \"reset-token\",\n  \"newPassword\": \"NewPassword123\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/reset-password",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "reset-password" ]
+        },
+        "description" : "Resets password using reset token"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
+      }, {
+        "name" : "409 Conflict. Contract error codes: `SAME_PASSWORD`",
+        "status" : "Conflict",
+        "code" : 409,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"SAME_PASSWORD\",\n  \"message\" : \"New password cannot be the same as the old password\"\n}"
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Resend verification email",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"email\": \"user@example.com\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/resend-verification",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "resend-verification" ]
+        },
+        "description" : "Requests another verification email under rate limit"
+      },
+      "response" : [ {
+        "name" : "204 No Content",
+        "status" : "No Content",
+        "code" : 204,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Register user",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"email\": \"user@example.com\",\n  \"displayName\": \"Test User\",\n  \"password\": \"Password123\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/register",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "register" ]
+        },
+        "description" : "Creates a new user and sends verification email"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"email\" : \"user@example.com\",\n  \"displayName\" : \"Test User\",\n  \"emailVerified\" : true\n}"
+      }, {
+        "name" : "409 Conflict. Contract error codes: `USER_ALREADY_EXISTS`",
+        "status" : "Conflict",
+        "code" : 409,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"USER_ALREADY_EXISTS\",\n  \"message\" : \"User with this email already exists\"\n}"
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Refresh access token",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"refreshToken\": \"your-refresh-token\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/refresh-token",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "refresh-token" ]
+        },
+        "description" : "Issues a new access token using a refresh token"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"user\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"emailVerified\" : true\n  },\n  \"accessToken\" : \"sample-access-token\",\n  \"refreshToken\" : \"sample-refresh-token\"\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `USER_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"USER_NOT_FOUND\",\n  \"message\" : \"User not found\"\n}"
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Logout user",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"refreshToken\": \"your-refresh-token\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/logout",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "logout" ]
+        },
+        "description" : "Invalidates the refresh token"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Login user",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/login",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "login" ]
+        },
+        "description" : "Authenticates credentials and returns JWT tokens"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"user\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"emailVerified\" : true\n  },\n  \"accessToken\" : \"sample-access-token\",\n  \"refreshToken\" : \"sample-refresh-token\"\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `INVALID_CREDENTIALS`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"INVALID_CREDENTIALS\",\n  \"message\" : \"Invalid email or password\"\n}"
+      }, {
+        "name" : "403 Forbidden. Contract error codes: `EMAIL_NOT_VERIFIED`",
+        "status" : "Forbidden",
+        "code" : 403,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"EMAIL_NOT_VERIFIED\",\n  \"message\" : \"Email is not verified\"\n}"
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Forgot password",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"email\": \"user@example.com\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/forgot-password",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "forgot-password" ]
+        },
+        "description" : "Requests password reset email"
+      },
+      "response" : [ {
+        "name" : "204 No Content",
+        "status" : "No Content",
+        "code" : 204,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Change password",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"oldPassword\": \"OldPassword123\",\n  \"newPassword\": \"NewPassword123\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/change-password",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "change-password" ]
+        },
+        "description" : "Changes authenticated user password"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`, `WRONG_PASSWORD`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "409 Conflict. Contract error codes: `SAME_PASSWORD`",
+        "status" : "Conflict",
+        "code" : 409,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"SAME_PASSWORD\",\n  \"message\" : \"New password cannot be the same as the old password\"\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `USER_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"USER_NOT_FOUND\",\n  \"message\" : \"User not found\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      } ]
+    }, {
+      "name" : "Verify email",
+      "request" : {
+        "method" : "GET",
+        "header" : [ ],
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/verify-email?token=sample-token",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "verify-email" ],
+          "query" : [ {
+            "key" : "token",
+            "value" : "sample-token",
+            "description" : ""
+          } ]
+        },
+        "description" : "Verifies email address using verification token"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
+      } ]
+    } ]
+  }, {
+    "name" : "Chat Participants",
+    "item" : [ {
+      "name" : "Get chat participant",
+      "request" : {
+        "method" : "GET",
+        "header" : [ ],
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/participants?email=user@example.com",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "participants" ],
+          "query" : [ {
+            "key" : "email",
+            "value" : "user@example.com",
+            "description" : ""
+          } ]
+        },
+        "description" : "Looks up a chat participant by email or returns the requester"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n  \"email\" : \"user@example.com\",\n  \"displayName\" : \"Test User\",\n  \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n}"
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `CHAT_PARTICIPANT_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"CHAT_PARTICIPANT_NOT_FOUND\",\n  \"message\" : \"Chat participant not found\"\n}"
+      } ]
+    } ]
+  }, {
+    "name" : "Chat Messages",
+    "item" : [ {
+      "name" : "Delete chat message",
+      "request" : {
+        "method" : "DELETE",
+        "header" : [ ],
+        "auth" : {
+          "type" : "bearer",
+          "bearer" : [ {
+            "key" : "token",
+            "value" : "{{bearerToken}}",
+            "type" : "string"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/api/chat/messages/:messageId",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "chat", "messages", ":messageId" ],
+          "variable" : [ {
+            "key" : "messageId",
+            "value" : "00000000-0000-0000-0000-000000000000",
+            "description" : ""
+          } ]
+        },
+        "description" : "Deletes a chat message sent by the requester"
+      },
+      "response" : [ {
+        "name" : "200 OK",
+        "status" : "OK",
+        "code" : 200,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
+      }, {
+        "name" : "403 Forbidden. Contract error codes: `FORBIDDEN`",
+        "status" : "Forbidden",
+        "code" : 403,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
+      }, {
+        "name" : "404 Not Found. Contract error codes: `MESSAGE_NOT_FOUND`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"code\" : \"MESSAGE_NOT_FOUND\",\n  \"message\" : \"Message not found\"\n}"
+      } ]
+    } ]
+  } ]
+}

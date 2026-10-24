@@ -2,7 +2,7 @@ package io.github.neronguyenvn.nerochat.chat.infra.database.model
 
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

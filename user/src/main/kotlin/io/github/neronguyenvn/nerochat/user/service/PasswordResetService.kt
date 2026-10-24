@@ -43,7 +43,7 @@ class PasswordResetService(
     @Transactional
     fun requestPasswordReset(email: String){
         val user = userRepository.findByEmail(normalizeEmail(email))
-            ?: throw UserNotFoundException()
+            ?: throw UserNotFoundException.byEmail()
 
         authTokenRepository.invalidatePasswordResetTokens(user)
 
@@ -113,7 +113,7 @@ class PasswordResetService(
      * Existing access tokens are not revoked.
      *
      * @throws IllegalArgumentException if [userId] cannot be parsed as a UUID.
-     * @throws IllegalStateException if the user does not exist.
+     * @throws UserNotFoundException if the user does not exist.
      * @throws WrongPasswordException if [oldPassword] does not match the stored password.
      * @throws SamePasswordException if [newPassword] equals [oldPassword].
      */
@@ -124,7 +124,7 @@ class PasswordResetService(
         newPassword: String
     ) {
         val user = userRepository.findByIdOrNull(userId.asUUID())
-            ?: error("User cannot be null")
+            ?: throw UserNotFoundException.byId()
 
         if (!passwordEncoder.matches(oldPassword, user.hashedPassword)) {
             throw WrongPasswordException()

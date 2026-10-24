@@ -1,9 +1,9 @@
 package io.github.neronguyenvn.nerochat.chat.infra.database.repository
 
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatParticipantEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -185,9 +185,8 @@ class ChatMessageRepositoryTest {
         )
         entityManager.clear()
 
-        val slice = chatMessageRepository.findByRoomIdBefore(
+        val slice = chatMessageRepository.findByRoomId(
             roomId = room.id!!,
-            before = null,
             pageable = PageRequest.of(0, 10)
         )
 

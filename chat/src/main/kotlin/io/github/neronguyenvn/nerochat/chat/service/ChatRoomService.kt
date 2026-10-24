@@ -1,14 +1,13 @@
 package io.github.neronguyenvn.nerochat.chat.service
 
-import io.github.neronguyenvn.nerochat.chat.api.model.ChatMessageSliceDto
-import io.github.neronguyenvn.nerochat.chat.api.model.asDto
+import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
-import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoomType
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.DirectPairKey
@@ -16,6 +15,8 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.model.asExternalModel
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessageRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
+import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
+import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -154,7 +155,7 @@ class ChatRoomService(
     @Transactional
     fun createGroupChatRoom(
         creatorId: UserId,
-        name: String,
+        name: String? = null,
         participantIds: List<UserId>,
     ): ChatRoom {
         val uniqueParticipantIds = participantIds.toSet()
@@ -181,7 +182,7 @@ class ChatRoomService(
         val groupRoom = chatRoomRepository.save(
             ChatRoomEntity(
                 type = ChatRoomType.GROUP,
-                name = name.trim(),
+                name = name?.trim()?.takeIf { it.isNotEmpty() },
                 creator = creator,
                 participants = allParticipants,
             )
@@ -221,7 +222,7 @@ class ChatRoomService(
 
         val users = userIds.map { userId ->
             if (userId in chatParticipantIds) {
-                throw ForbiddenException()
+                throw ParticipantAlreadyInRoomException(userId)
             }
 
             chatParticipantRepository.findByIdOrNull(userId.asUUID())
