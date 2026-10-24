@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
-import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.responses.ApiResponse
 import java.util.UUID
 
 object PostmanCollectionGenerator {
@@ -158,17 +160,22 @@ object PostmanCollectionGenerator {
         operation.responses?.forEach { (statusCode, apiResponse) ->
             val code = statusCode.toIntOrNull() ?: 200
             val statusReason = org.springframework.http.HttpStatus.resolve(code)?.reasonPhrase ?: statusCode
-            val sampleBody = getSampleResponseBody(statusCode, apiResponse.description)
-            responses.add(
-                mapOf(
-                    "name" to "$statusCode ${apiResponse.description ?: ""}".trim(),
-                    "status" to statusReason,
-                    "code" to code,
-                    "_postman_previewlanguage" to "json",
-                    "header" to if (sampleBody != null) listOf(mapOf("key" to "Content-Type", "value" to "application/json")) else emptyList<Map<String, String>>(),
-                    "body" to (sampleBody ?: "")
-                )
+            val sampleBody = getSampleResponseBody(statusCode, apiResponse, openApi)
+            val responseMap = linkedMapOf<String, Any?>(
+                "name" to "$statusCode ${apiResponse.description ?: ""}".trim(),
+                "status" to statusReason,
+                "code" to code,
+                "_postman_previewlanguage" to "json",
+                "header" to if (sampleBody != null) {
+                    listOf(mapOf("key" to "Content-Type", "value" to "application/json"))
+                } else {
+                    emptyList<Map<String, String>>()
+                }
             )
+            if (sampleBody != null) {
+                responseMap["body"] = sampleBody
+            }
+            responses.add(responseMap)
         }
 
         return mapOf(
@@ -248,57 +255,140 @@ object PostmanCollectionGenerator {
         else -> null
     }
 
-    private fun getSampleResponseBody(statusCode: String, description: String?): String? = when (statusCode) {
-        "204" -> null
-        "200", "201" -> """
-            {
-              "status": "success"
+    private fun getSampleResponseBody(
+        statusCode: String,
+        apiResponse: ApiResponse,
+        openApi: OpenAPI
+    ): String? {
+        val content = apiResponse.content
+        if (statusCode == "204" || content.isNullOrEmpty()) {
+            return null
+        }
+
+        if (statusCode.startsWith("2")) {
+            val schema = content.values.firstOrNull()?.schema ?: return null
+            val sample = generateSampleFromSchema(schema, openApi) ?: return null
+            return objectMapper.writeValueAsString(sample)
+        }
+
+        val declaredErrorCode = apiResponse.description?.let { desc ->
+            Regex("`([A-Z0-9_]+)`").find(desc)?.groupValues?.get(1)
+        }
+        val errorCode = declaredErrorCode ?: when (statusCode) {
+            "400" -> "VALIDATION_FAILED"
+            "401" -> "UNAUTHORIZED"
+            "403" -> "FORBIDDEN"
+            "404" -> "CHAT_ROOM_NOT_FOUND"
+            "409" -> "USER_ALREADY_EXISTS"
+            "429" -> "RATE_LIMIT_EXCEEDED"
+            else -> "INTERNAL_SERVER_ERROR"
+        }
+
+        val errorPayload = linkedMapOf<String, Any?>(
+            "code" to errorCode,
+            "message" to getErrorMessageForCode(errorCode)
+        )
+        if (errorCode == "VALIDATION_FAILED") {
+            errorPayload["errors"] = listOf("Email must not be blank")
+            errorPayload["fieldErrors"] = mapOf("email" to "Email must not be blank")
+        } else if (errorCode == "RATE_LIMIT_EXCEEDED") {
+            errorPayload["retryAfterSeconds"] = 60
+        }
+        return objectMapper.writeValueAsString(errorPayload)
+    }
+
+    private fun getErrorMessageForCode(errorCode: String): String = when (errorCode) {
+        "VALIDATION_FAILED" -> "Validation failed"
+        "BAD_REQUEST" -> "Invalid request"
+        "INVALID_CHAT_ROOM_SIZE" -> "Chat room must have at least 2 participants"
+        "UNAUTHORIZED" -> "Authentication required"
+        "INVALID_CREDENTIALS" -> "Invalid email or password"
+        "INVALID_TOKEN" -> "Invalid or expired token"
+        "WRONG_PASSWORD" -> "Current password is incorrect"
+        "FORBIDDEN" -> "Access denied"
+        "EMAIL_NOT_VERIFIED" -> "Email is not verified"
+        "USER_NOT_FOUND" -> "User not found"
+        "CHAT_ROOM_NOT_FOUND" -> "Chat room not found"
+        "CHAT_PARTICIPANT_NOT_FOUND" -> "Chat participant not found"
+        "MESSAGE_NOT_FOUND" -> "Message not found"
+        "USER_ALREADY_EXISTS" -> "User with this email already exists"
+        "SAME_PASSWORD" -> "New password cannot be the same as the old password"
+        "PARTICIPANT_ALREADY_IN_ROOM" -> "Participant is already in the chat room"
+        "DUPLICATE_MESSAGE_ID" -> "Message with this ID already exists"
+        "RATE_LIMIT_EXCEEDED" -> "Too many requests. Please try again later."
+        else -> "An unexpected error occurred"
+    }
+
+    private fun generateSampleFromSchema(
+        schema: Schema<*>,
+        openApi: OpenAPI,
+        propertyName: String? = null,
+        visitedRefs: Set<String> = emptySet()
+    ): Any? {
+        schema.`$ref`?.let { ref ->
+            val refName = ref.substringAfterLast('/')
+            if (refName in visitedRefs) return emptyMap<String, Any?>()
+            val targetSchema = openApi.components?.schemas?.get(refName) ?: return emptyMap<String, Any?>()
+            return generateSampleFromSchema(targetSchema, openApi, propertyName, visitedRefs + refName)
+        }
+
+        if (!schema.oneOf.isNullOrEmpty()) {
+            val nonNullSubSchema = schema.oneOf.firstOrNull {
+                it.`$ref` != null || (it.type != "null" && it.types != setOf("null"))
             }
-        """.trimIndent()
-        "400" -> """
-            {
-              "code": "VALIDATION_FAILED",
-              "message": "Validation failed",
-              "errors": ["Email must not be blank"],
-              "fieldErrors": { "email": "Email must not be blank" }
+            if (nonNullSubSchema != null) {
+                return generateSampleFromSchema(nonNullSubSchema, openApi, propertyName, visitedRefs)
             }
-        """.trimIndent()
-        "401" -> """
-            {
-              "code": "UNAUTHORIZED",
-              "message": "Authentication required"
+        }
+
+        if (!schema.anyOf.isNullOrEmpty()) {
+            val nonNullSubSchema = schema.anyOf.firstOrNull {
+                it.`$ref` != null || (it.type != "null" && it.types != setOf("null"))
             }
-        """.trimIndent()
-        "403" -> """
-            {
-              "code": "FORBIDDEN",
-              "message": "Access denied"
+            if (nonNullSubSchema != null) {
+                return generateSampleFromSchema(nonNullSubSchema, openApi, propertyName, visitedRefs)
             }
-        """.trimIndent()
-        "404" -> """
-            {
-              "code": "CHAT_ROOM_NOT_FOUND",
-              "message": "Chat room not found"
+        }
+
+        schema.example?.let { return it }
+        if (!schema.enum.isNullOrEmpty()) {
+            return schema.enum.first()
+        }
+
+        val resolvedType = schema.type ?: schema.types?.firstOrNull { it != "null" }
+
+        return when {
+            resolvedType == "array" || schema is ArraySchema || schema.items != null -> {
+                val itemSample = schema.items?.let { generateSampleFromSchema(it, openApi, propertyName, visitedRefs) }
+                if (itemSample != null) listOf(itemSample) else emptyList<Any>()
             }
-        """.trimIndent()
-        "409" -> """
-            {
-              "code": "USER_ALREADY_EXISTS",
-              "message": "User with this email already exists"
+            resolvedType == "object" || !schema.properties.isNullOrEmpty() -> {
+                val result = linkedMapOf<String, Any?>()
+                schema.properties?.forEach { (propName, propSchema) ->
+                    result[propName] = generateSampleFromSchema(propSchema, openApi, propName, visitedRefs)
+                }
+                result
             }
-        """.trimIndent()
-        "429" -> """
-            {
-              "code": "RATE_LIMIT_EXCEEDED",
-              "message": "Too many requests. Please try again later.",
-              "retryAfterSeconds": 60
-            }
-        """.trimIndent()
-        else -> """
-            {
-              "code": "INTERNAL_SERVER_ERROR",
-              "message": "An unexpected error occurred"
-            }
-        """.trimIndent()
+            resolvedType == "boolean" -> propertyName != "hasMore"
+            resolvedType == "integer" || resolvedType == "number" -> 0
+            resolvedType == "string" -> sampleStringForProperty(propertyName, schema.format)
+            else -> null
+        }
+    }
+
+    private fun sampleStringForProperty(propertyName: String?, format: String?): String = when {
+        format == "date-time" -> "2026-10-23T18:45:18Z"
+        format == "uuid" -> "00000000-0000-0000-0000-000000000000"
+        propertyName == null -> "string"
+        propertyName.equals("id", ignoreCase = true) || propertyName.endsWith("Id") ->
+            "00000000-0000-0000-0000-000000000000"
+        propertyName.contains("email", ignoreCase = true) -> "user@example.com"
+        propertyName.equals("displayName", ignoreCase = true) -> "Test User"
+        propertyName.equals("name", ignoreCase = true) -> "Team Chat"
+        propertyName.equals("content", ignoreCase = true) -> "Hello!"
+        propertyName.equals("accessToken", ignoreCase = true) -> "sample-access-token"
+        propertyName.equals("refreshToken", ignoreCase = true) -> "sample-refresh-token"
+        propertyName.contains("url", ignoreCase = true) -> "https://example.com/avatar.png"
+        else -> "string"
     }
 }

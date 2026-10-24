@@ -176,9 +176,7 @@ class OpenApiConfig {
     private fun customizeParameters(operation: Operation) {
         operation.parameters?.forEach { parameter ->
             if (parameter.`in` == "path" && parameter.name in listOf("roomId", "messageId", "userId")) {
-                val schema = parameter.schema ?: StringSchema()
-                schema.format = "uuid"
-                parameter.schema = schema
+                parameter.schema = StringSchema().format("uuid")
             }
         }
     }

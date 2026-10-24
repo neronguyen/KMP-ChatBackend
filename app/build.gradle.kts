@@ -37,5 +37,19 @@ kotlin {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("export")
+    }
+    systemProperty("project.rootDir", rootProject.projectDir.absolutePath)
+}
+
+tasks.register<Test>("exportApiDocs") {
+    description = "Exports OpenAPI specification and Postman collection to the docs directory."
+    group = "documentation"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform {
+        includeTags("export")
+    }
+    systemProperty("project.rootDir", rootProject.projectDir.absolutePath)
 }

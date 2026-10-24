@@ -62,7 +62,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -72,7 +72,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`, `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -82,7 +82,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
       }, {
         "name" : "403 Forbidden. Contract error codes: `FORBIDDEN`",
         "status" : "Forbidden",
@@ -92,7 +92,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"FORBIDDEN\",\n  \"message\": \"Access denied\"\n}"
+        "body" : "{\n  \"code\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `CHAT_ROOM_NOT_FOUND`, `CHAT_PARTICIPANT_NOT_FOUND`",
         "status" : "Not Found",
@@ -102,7 +102,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"CHAT_ROOM_NOT_FOUND\",\n  \"message\" : \"Chat room not found\"\n}"
       }, {
         "name" : "409 Conflict. Contract error codes: `PARTICIPANT_ALREADY_IN_ROOM`",
         "status" : "Conflict",
@@ -112,7 +112,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"USER_ALREADY_EXISTS\",\n  \"message\": \"User with this email already exists\"\n}"
+        "body" : "{\n  \"code\" : \"PARTICIPANT_ALREADY_IN_ROOM\",\n  \"message\" : \"Participant is already in the chat room\"\n}"
       } ]
     }, {
       "name" : "Create group chat room",
@@ -155,7 +155,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -165,7 +165,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`, `INVALID_CHAT_ROOM_SIZE`",
         "status" : "Bad Request",
@@ -175,7 +175,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `CHAT_PARTICIPANT_NOT_FOUND`",
         "status" : "Not Found",
@@ -185,7 +185,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"CHAT_PARTICIPANT_NOT_FOUND\",\n  \"message\" : \"Chat participant not found\"\n}"
       } ]
     }, {
       "name" : "Create direct chat room",
@@ -228,7 +228,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -238,7 +238,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`, `INVALID_CHAT_ROOM_SIZE`",
         "status" : "Bad Request",
@@ -248,7 +248,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `CHAT_PARTICIPANT_NOT_FOUND`",
         "status" : "Not Found",
@@ -258,7 +258,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"CHAT_PARTICIPANT_NOT_FOUND\",\n  \"message\" : \"Chat participant not found\"\n}"
       } ]
     }, {
       "name" : "Get user chat rooms",
@@ -289,7 +289,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "[ {\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n} ]"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -299,7 +299,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       } ]
     }, {
       "name" : "Get chat room by ID",
@@ -335,7 +335,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"type\" : \"DIRECT\",\n  \"name\" : \"Team Chat\",\n  \"creator\" : {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  },\n  \"participants\" : [ {\n    \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n  } ],\n  \"lastMessage\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  },\n  \"lastActivityAt\" : \"2026-10-23T18:45:18Z\"\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -345,7 +345,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
         "status" : "Bad Request",
@@ -355,7 +355,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `CHAT_ROOM_NOT_FOUND`",
         "status" : "Not Found",
@@ -365,7 +365,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"CHAT_ROOM_NOT_FOUND\",\n  \"message\" : \"Chat room not found\"\n}"
       } ]
     }, {
       "name" : "Get chat room messages",
@@ -406,7 +406,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"messages\" : [ {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"roomId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"senderId\" : \"00000000-0000-0000-0000-000000000000\",\n    \"content\" : \"Hello!\",\n    \"createdAt\" : \"2026-10-23T18:45:18Z\"\n  } ],\n  \"hasMore\" : false\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -416,7 +416,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
         "status" : "Bad Request",
@@ -426,7 +426,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
       }, {
         "name" : "403 Forbidden. Contract error codes: `FORBIDDEN`",
         "status" : "Forbidden",
@@ -436,7 +436,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"FORBIDDEN\",\n  \"message\": \"Access denied\"\n}"
+        "body" : "{\n  \"code\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
       } ]
     }, {
       "name" : "Leave chat room",
@@ -468,11 +468,7 @@
         "status" : "OK",
         "code" : 200,
         "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "header" : [ ]
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -482,7 +478,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
         "status" : "Bad Request",
@@ -492,7 +488,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `CHAT_ROOM_NOT_FOUND`, `CHAT_PARTICIPANT_NOT_FOUND`",
         "status" : "Not Found",
@@ -502,7 +498,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"CHAT_ROOM_NOT_FOUND\",\n  \"message\" : \"Chat room not found\"\n}"
       } ]
     } ]
   }, {
@@ -536,11 +532,7 @@
         "status" : "OK",
         "code" : 200,
         "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "header" : [ ]
       }, {
         "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
         "status" : "Unauthorized",
@@ -550,7 +542,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
       }, {
         "name" : "409 Conflict. Contract error codes: `SAME_PASSWORD`",
         "status" : "Conflict",
@@ -560,7 +552,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"USER_ALREADY_EXISTS\",\n  \"message\": \"User with this email already exists\"\n}"
+        "body" : "{\n  \"code\" : \"SAME_PASSWORD\",\n  \"message\" : \"New password cannot be the same as the old password\"\n}"
       }, {
         "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
         "status" : "Too Many Requests",
@@ -570,7 +562,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"RATE_LIMIT_EXCEEDED\",\n  \"message\": \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\": 60\n}"
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -580,7 +572,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Resend verification email",
@@ -611,8 +603,7 @@
         "status" : "No Content",
         "code" : 204,
         "_postman_previewlanguage" : "json",
-        "header" : [ ],
-        "body" : ""
+        "header" : [ ]
       }, {
         "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
         "status" : "Too Many Requests",
@@ -622,7 +613,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"RATE_LIMIT_EXCEEDED\",\n  \"message\": \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\": 60\n}"
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -632,7 +623,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Register user",
@@ -667,7 +658,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"id\" : \"00000000-0000-0000-0000-000000000000\",\n  \"email\" : \"user@example.com\",\n  \"displayName\" : \"Test User\",\n  \"emailVerified\" : true\n}"
       }, {
         "name" : "409 Conflict. Contract error codes: `USER_ALREADY_EXISTS`",
         "status" : "Conflict",
@@ -677,7 +668,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"USER_ALREADY_EXISTS\",\n  \"message\": \"User with this email already exists\"\n}"
+        "body" : "{\n  \"code\" : \"USER_ALREADY_EXISTS\",\n  \"message\" : \"User with this email already exists\"\n}"
       }, {
         "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
         "status" : "Too Many Requests",
@@ -687,7 +678,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"RATE_LIMIT_EXCEEDED\",\n  \"message\": \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\": 60\n}"
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -697,7 +688,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Refresh access token",
@@ -732,7 +723,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"user\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"emailVerified\" : true\n  },\n  \"accessToken\" : \"sample-access-token\",\n  \"refreshToken\" : \"sample-refresh-token\"\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
         "status" : "Unauthorized",
@@ -742,7 +733,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `USER_NOT_FOUND`",
         "status" : "Not Found",
@@ -752,7 +743,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"USER_NOT_FOUND\",\n  \"message\" : \"User not found\"\n}"
       }, {
         "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
         "status" : "Too Many Requests",
@@ -762,7 +753,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"RATE_LIMIT_EXCEEDED\",\n  \"message\": \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\": 60\n}"
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -772,7 +763,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Logout user",
@@ -803,11 +794,7 @@
         "status" : "OK",
         "code" : 200,
         "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "header" : [ ]
       }, {
         "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
         "status" : "Unauthorized",
@@ -817,7 +804,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -827,7 +814,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Login user",
@@ -862,7 +849,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"user\" : {\n    \"id\" : \"00000000-0000-0000-0000-000000000000\",\n    \"email\" : \"user@example.com\",\n    \"displayName\" : \"Test User\",\n    \"emailVerified\" : true\n  },\n  \"accessToken\" : \"sample-access-token\",\n  \"refreshToken\" : \"sample-refresh-token\"\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `INVALID_CREDENTIALS`",
         "status" : "Unauthorized",
@@ -872,7 +859,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"INVALID_CREDENTIALS\",\n  \"message\" : \"Invalid email or password\"\n}"
       }, {
         "name" : "403 Forbidden. Contract error codes: `EMAIL_NOT_VERIFIED`",
         "status" : "Forbidden",
@@ -882,7 +869,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"FORBIDDEN\",\n  \"message\": \"Access denied\"\n}"
+        "body" : "{\n  \"code\" : \"EMAIL_NOT_VERIFIED\",\n  \"message\" : \"Email is not verified\"\n}"
       }, {
         "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
         "status" : "Too Many Requests",
@@ -892,7 +879,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"RATE_LIMIT_EXCEEDED\",\n  \"message\": \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\": 60\n}"
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -902,7 +889,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Forgot password",
@@ -933,8 +920,7 @@
         "status" : "No Content",
         "code" : 204,
         "_postman_previewlanguage" : "json",
-        "header" : [ ],
-        "body" : ""
+        "header" : [ ]
       }, {
         "name" : "429 Too Many Requests. Contract error codes: `RATE_LIMIT_EXCEEDED`",
         "status" : "Too Many Requests",
@@ -944,7 +930,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"RATE_LIMIT_EXCEEDED\",\n  \"message\": \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\": 60\n}"
+        "body" : "{\n  \"code\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -954,7 +940,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Change password",
@@ -993,11 +979,7 @@
         "status" : "OK",
         "code" : 200,
         "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "header" : [ ]
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`, `WRONG_PASSWORD`",
         "status" : "Unauthorized",
@@ -1007,7 +989,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "409 Conflict. Contract error codes: `SAME_PASSWORD`",
         "status" : "Conflict",
@@ -1017,7 +999,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"USER_ALREADY_EXISTS\",\n  \"message\": \"User with this email already exists\"\n}"
+        "body" : "{\n  \"code\" : \"SAME_PASSWORD\",\n  \"message\" : \"New password cannot be the same as the old password\"\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `USER_NOT_FOUND`",
         "status" : "Not Found",
@@ -1027,7 +1009,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"USER_NOT_FOUND\",\n  \"message\" : \"User not found\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `VALIDATION_FAILED`",
         "status" : "Bad Request",
@@ -1037,7 +1019,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"errors\" : [ \"Email must not be blank\" ],\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Verify email",
@@ -1061,11 +1043,7 @@
         "status" : "OK",
         "code" : 200,
         "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "header" : [ ]
       }, {
         "name" : "401 Unauthorized. Contract error codes: `INVALID_TOKEN`",
         "status" : "Unauthorized",
@@ -1075,7 +1053,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"INVALID_TOKEN\",\n  \"message\" : \"Invalid or expired token\"\n}"
       } ]
     } ]
   }, {
@@ -1114,7 +1092,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "body" : "{\n  \"userId\" : \"00000000-0000-0000-0000-000000000000\",\n  \"email\" : \"user@example.com\",\n  \"displayName\" : \"Test User\",\n  \"profilePictureUrl\" : \"https://example.com/avatar.png\"\n}"
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -1124,7 +1102,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `CHAT_PARTICIPANT_NOT_FOUND`",
         "status" : "Not Found",
@@ -1134,7 +1112,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"CHAT_PARTICIPANT_NOT_FOUND\",\n  \"message\" : \"Chat participant not found\"\n}"
       } ]
     } ]
   }, {
@@ -1169,11 +1147,7 @@
         "status" : "OK",
         "code" : 200,
         "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"status\": \"success\"\n}"
+        "header" : [ ]
       }, {
         "name" : "401 Unauthorized. Contract error codes: `UNAUTHORIZED`",
         "status" : "Unauthorized",
@@ -1183,7 +1157,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"UNAUTHORIZED\",\n  \"message\": \"Authentication required\"\n}"
+        "body" : "{\n  \"code\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
         "name" : "400 Bad Request. Contract error codes: `BAD_REQUEST`",
         "status" : "Bad Request",
@@ -1193,7 +1167,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"VALIDATION_FAILED\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\"Email must not be blank\"],\n  \"fieldErrors\": { \"email\": \"Email must not be blank\" }\n}"
+        "body" : "{\n  \"code\" : \"BAD_REQUEST\",\n  \"message\" : \"Invalid request\"\n}"
       }, {
         "name" : "403 Forbidden. Contract error codes: `FORBIDDEN`",
         "status" : "Forbidden",
@@ -1203,7 +1177,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"FORBIDDEN\",\n  \"message\": \"Access denied\"\n}"
+        "body" : "{\n  \"code\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
       }, {
         "name" : "404 Not Found. Contract error codes: `MESSAGE_NOT_FOUND`",
         "status" : "Not Found",
@@ -1213,7 +1187,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"code\": \"CHAT_ROOM_NOT_FOUND\",\n  \"message\": \"Chat room not found\"\n}"
+        "body" : "{\n  \"code\" : \"MESSAGE_NOT_FOUND\",\n  \"message\" : \"Message not found\"\n}"
       } ]
     } ]
   } ]
