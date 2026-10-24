@@ -4,6 +4,8 @@ pluginManagement {
 
 val githubActor = System.getenv("GITHUB_ACTOR") ?: providers.gradleProperty("gpr.user").orNull
 val githubToken = System.getenv("GITHUB_TOKEN") ?: providers.gradleProperty("gpr.key").orNull
+val contractRepoDir = file("../KMP-NeroChatContract")
+val useLocalContract = (providers.gradleProperty("useLocalContract").orNull != "false") && contractRepoDir.exists()
 
 dependencyResolutionManagement {
     repositories {
@@ -18,6 +20,8 @@ dependencyResolutionManagement {
                     password = githubToken
                 }
             }
+        } else if (!useLocalContract) {
+            logger.warn("WARNING: GITHUB_ACTOR or GITHUB_TOKEN is not set. GitHubPackages repository could not be configured.")
         }
     }
 }
@@ -25,8 +29,6 @@ dependencyResolutionManagement {
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "NeroChatBackendSpringBoot"
 
-val contractRepoDir = file("../KMP-NeroChatContract")
-val useLocalContract = (providers.gradleProperty("useLocalContract").orNull != "false") && contractRepoDir.exists()
 if (useLocalContract) {
     logger.lifecycle("Notice: Using local contract repository substitution from: {}", contractRepoDir.canonicalPath)
     includeBuild(contractRepoDir) {
