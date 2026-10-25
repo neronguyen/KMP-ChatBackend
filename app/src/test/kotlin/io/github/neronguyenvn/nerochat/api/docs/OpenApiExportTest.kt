@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.api.docs
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.neronguyenvn.nerochat.api.advice.CommonExceptionHandler
 import io.github.neronguyenvn.nerochat.api.config.OpenApiConfig
 import io.github.neronguyenvn.nerochat.api.security.JwtAuthenticationFilter
@@ -20,8 +21,7 @@ import io.github.neronguyenvn.nerochat.user.service.AuthService
 import io.github.neronguyenvn.nerochat.user.service.EmailVerificationService
 import io.github.neronguyenvn.nerochat.user.service.PasswordResetService
 import io.github.neronguyenvn.nerochat.user.service.ratelimiting.EmailRateLimitingService
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -41,7 +41,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import java.io.File
-import java.util.Locale
+import java.util.*
 
 @SpringBootTest(classes = [OpenApiExportTest.TestConfig::class])
 class OpenApiExportTest {
@@ -108,6 +108,52 @@ class OpenApiExportTest {
     }
 
     @Test
+    fun `v3 api-docs generates ApiErrorResponse schema conforming to contract constraints`() {
+        val result = mockMvc.perform(get("/v3/api-docs"))
+            .andExpect(status().isOk)
+            .andReturn()
+
+        val rootNode = ObjectMapper().readTree(result.response.contentAsString)
+        val schemaNode = rootNode.path("components").path("schemas").path("ApiErrorResponse")
+        assertTrue(!schemaNode.isMissingNode, "ApiErrorResponse schema should be defined under components.schemas")
+
+        // 1. All five ApiErrorResponse properties remain present
+        val properties = schemaNode.path("properties")
+        assertTrue(properties.has("code"), "Property 'code' must be present")
+        assertTrue(properties.has("message"), "Property 'message' must be present")
+        assertTrue(properties.has("errors"), "Property 'errors' must be present")
+        assertTrue(properties.has("fieldErrors"), "Property 'fieldErrors' must be present")
+        assertTrue(properties.has("retryAfterSeconds"), "Property 'retryAfterSeconds' must be present")
+
+        // 2. 'code' and 'message' are required; default-valued fields are optional
+        val requiredNode = schemaNode.path("required")
+        assertTrue(!requiredNode.isMissingNode && requiredNode.isArray, "'required' array must be present in schema")
+        val requiredFields = requiredNode.map { it.asText() }
+        assertTrue(requiredFields.contains("code"), "'code' must be in required list")
+        assertTrue(requiredFields.contains("message"), "'message' must be in required list")
+        assertFalse(requiredFields.contains("errors"), "'errors' should not be required")
+        assertFalse(requiredFields.contains("fieldErrors"), "'fieldErrors' should not be required")
+        assertFalse(requiredFields.contains("retryAfterSeconds"), "'retryAfterSeconds' should not be required")
+
+        // 3. 'message' is not nullable and type is string
+        val messageNode = properties.path("message")
+        assertEquals("string", messageNode.path("type").asText())
+        assertFalse(
+            messageNode.has("nullable") && messageNode.path("nullable").asBoolean(),
+            "'message' must not be nullable"
+        )
+
+        // 4. Schema property types match contract
+        assertEquals("string", properties.path("code").path("type").asText())
+        assertEquals("array", properties.path("errors").path("type").asText())
+        assertEquals("string", properties.path("errors").path("items").path("type").asText())
+        assertEquals("object", properties.path("fieldErrors").path("type").asText())
+        assertEquals("string", properties.path("fieldErrors").path("additionalProperties").path("type").asText())
+        assertEquals("integer", properties.path("retryAfterSeconds").path("type").asText())
+        assertEquals("int64", properties.path("retryAfterSeconds").path("format").asText())
+    }
+
+    @Test
     fun `swagger-ui html is accessible without authentication`() {
         mockMvc.perform(get("/swagger-ui.html"))
             .andExpect(status().is3xxRedirection)
@@ -120,9 +166,10 @@ class OpenApiExportTest {
 
         val openApiFile = File(docsDir, "openapi.json")
         assertTrue(openApiFile.exists(), "Committed docs/openapi.json is missing; run './gradlew :app:exportApiDocs'")
+        val objectMapper = ObjectMapper()
         assertEquals(
-            openApiFile.readText().replace("\r\n", "\n"),
-            openApiJson.replace("\r\n", "\n"),
+            objectMapper.readTree(openApiFile),
+            objectMapper.readTree(openApiJson),
             "docs/openapi.json is stale; run './gradlew :app:exportApiDocs' to regenerate"
         )
 

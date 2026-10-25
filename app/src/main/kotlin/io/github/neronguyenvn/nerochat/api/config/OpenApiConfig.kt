@@ -8,13 +8,7 @@ import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.info.Info
-import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.Content
-import io.swagger.v3.oas.models.media.IntegerSchema
-import io.swagger.v3.oas.models.media.MediaType
-import io.swagger.v3.oas.models.media.ObjectSchema
-import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
+import io.swagger.v3.oas.models.media.*
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.security.SecurityRequirement
@@ -27,11 +21,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.method.HandlerMethod
 import kotlin.reflect.KClass
-import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 @Configuration
-@OptIn(ExperimentalTime::class)
 class OpenApiConfig {
 
     init {
@@ -185,6 +177,7 @@ class OpenApiConfig {
         val schema = ObjectSchema().apply {
             name = API_ERROR_RESPONSE_SCHEMA
             description = "Standardized error response payload returned on all API error conditions"
+            required = listOf("code", "message")
             addProperty(
                 "code",
                 StringSchema()
@@ -194,7 +187,6 @@ class OpenApiConfig {
             addProperty(
                 "message",
                 StringSchema()
-                    .nullable(true)
                     .description("Human-readable error description")
                     .example("Validation failed")
             )

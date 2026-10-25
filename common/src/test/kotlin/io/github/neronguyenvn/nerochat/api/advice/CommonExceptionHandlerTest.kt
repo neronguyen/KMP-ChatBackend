@@ -1,46 +1,160 @@
 package io.github.neronguyenvn.nerochat.api.advice
 
+import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
+import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
 import io.github.neronguyenvn.nerochat.contract.error.ServerError
-import org.junit.jupiter.api.Assertions.assertEquals
+import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
+import io.github.neronguyenvn.nerochat.domain.exception.UnauthorizedException
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import org.springframework.core.MethodParameter
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.AccessDeniedException
+import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.mock.http.MockHttpInputMessage
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.validation.BeanPropertyBindingResult
+import org.springframework.validation.FieldError
+import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
+import org.springframework.web.context.request.ServletWebRequest
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.server.ResponseStatusException
 
 class CommonExceptionHandlerTest {
 
     private val handler = CommonExceptionHandler()
 
-    @Test
-    fun `rethrows AccessDeniedException`() {
-        val ex = AccessDeniedException("Access denied by security")
-        assertThrows<AccessDeniedException> {
-            handler.onAccessDenied(ex)
-        }
-        assertThrows<AccessDeniedException> {
-            handler.onUnhandledException(ex)
-        }
+    private fun handleSpringMvcException(ex: Exception): ResponseEntity<Any> {
+        val request = ServletWebRequest(MockHttpServletRequest())
+        return handler.handleException(ex, request) ?: error("Response was null for $ex")
     }
 
     @Test
-    fun `handles ErrorResponse preserving 4xx status code and message`() {
+    fun `handles UnauthorizedException with 401 status and UNAUTHORIZED code`() {
+        val ex = UnauthorizedException("Token has expired")
+        val response = handler.onUnauthorized(ex)
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.UNAUTHORIZED, response.body?.code)
+        assertEquals("Token has expired", response.body?.message)
+    }
+
+    @Test
+    fun `handles ForbiddenException with 403 status and FORBIDDEN code`() {
+        val ex = ForbiddenException()
+        val response = handler.onForbidden(ex)
+
+        assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.FORBIDDEN, response.body?.code)
+        assertEquals("You are not allowed to do that", response.body?.message)
+    }
+
+    @Test
+    fun `handles InvalidUuidException with 400 status and does not leak invalid value`() {
+        val ex = InvalidUuidException(parameterName = "roomId", invalidValue = "not-a-valid-uuid")
+        val response = handler.onInvalidUuid(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.BAD_REQUEST, response.body?.code)
+        assertEquals("Parameter 'roomId' must be a valid UUID", response.body?.message)
+        assertFalse(response.body?.message?.contains("not-a-valid-uuid") == true)
+    }
+
+    @Test
+    fun `handles MethodArgumentNotValidException with 400 status and VALIDATION_FAILED code`() {
+        val method = javaClass.getDeclaredMethod("dummyMethod", String::class.java)
+        val parameter = MethodParameter(method, 0)
+        val bindingResult = BeanPropertyBindingResult("dummyTarget", "target")
+        bindingResult.addError(FieldError("target", "email", "Email format is invalid"))
+        bindingResult.addError(FieldError("target", "password", "Password cannot be blank"))
+
+        val ex = MethodArgumentNotValidException(parameter, bindingResult)
+        val response = handleSpringMvcException(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        val body = response.body as? ApiErrorResponse
+        assertNotNull(body)
+        assertEquals(ServerError.VALIDATION_FAILED, body?.code)
+        assertEquals("Email format is invalid", body?.message)
+        assertEquals(listOf("Email format is invalid", "Password cannot be blank"), body?.errors)
+        assertEquals("Email format is invalid", body?.fieldErrors?.get("email"))
+        assertEquals("Password cannot be blank", body?.fieldErrors?.get("password"))
+    }
+
+    @Suppress("unused")
+    private fun dummyMethod(payload: String) {
+    }
+
+    @Test
+    fun `handles HttpMessageNotReadableException with 400 status and BAD_REQUEST code`() {
+        val ex = HttpMessageNotReadableException(
+            "JSON parse error",
+            MockHttpInputMessage(ByteArray(0))
+        )
+        val response = handleSpringMvcException(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        val body = response.body as? ApiErrorResponse
+        assertNotNull(body)
+        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals("Malformed request body", body?.message)
+        assertTrue(body?.errors?.isEmpty() == true)
+        assertTrue(body?.fieldErrors?.isEmpty() == true)
+    }
+
+    @Test
+    fun `handles MissingServletRequestParameterException with 400 status and parameter name`() {
+        val ex = MissingServletRequestParameterException("query", "String")
+        val response = handleSpringMvcException(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        val body = response.body as? ApiErrorResponse
+        assertNotNull(body)
+        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals("Missing required parameter: 'query'", body?.message)
+    }
+
+    @Test
+    fun `handles MethodArgumentTypeMismatchException with 400 status without echoing invalid value`() {
+        val method = javaClass.getDeclaredMethod("dummyMethod", String::class.java)
+        val parameter = MethodParameter(method, 0)
+        val ex = MethodArgumentTypeMismatchException("raw-value", String::class.java, "filterId", parameter, null)
+        val response = handleSpringMvcException(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        val body = response.body as? ApiErrorResponse
+        assertNotNull(body)
+        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals("Invalid parameter: 'filterId'", body?.message)
+        assertFalse(body?.message?.contains("raw-value") == true)
+    }
+
+    @Test
+    fun `handles ErrorResponse via handleExceptionInternal preserving 4xx status code and detail`() {
         val ex = ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found")
-        val response = handler.onErrorResponse(ex)
+        val response = handleSpringMvcException(ex)
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
-        assertEquals(ServerError.BAD_REQUEST, response.body?.code)
-        assertEquals("Resource not found", response.body?.message)
+        val body = response.body as? ApiErrorResponse
+        assertNotNull(body)
+        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals("Resource not found", body?.message)
     }
 
     @Test
-    fun `handles ErrorResponse via onUnhandledException fallback`() {
-        val ex = ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed")
-        val response = handler.onUnhandledException(ex)
+    fun `handles ErrorResponse with 5xx status via handleExceptionInternal returning generic 500 error response`() {
+        val ex = ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Database connection failed")
+        val response = handleSpringMvcException(ex)
 
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.statusCode)
-        assertEquals(ServerError.BAD_REQUEST, response.body?.code)
-        assertEquals("Method not allowed", response.body?.message)
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        val body = response.body as? ApiErrorResponse
+        assertNotNull(body)
+        assertEquals(ServerError.INTERNAL_SERVER_ERROR, body?.code)
+        assertEquals("An unexpected error occurred", body?.message)
     }
 
     @Test
@@ -49,6 +163,18 @@ class CommonExceptionHandlerTest {
         val response = handler.onUnhandledException(ex)
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.INTERNAL_SERVER_ERROR, response.body?.code)
+        assertEquals("An unexpected error occurred", response.body?.message)
+    }
+
+    @Test
+    fun `treats unhandled IllegalArgumentException as 500 internal server error`() {
+        val ex = IllegalArgumentException("Unexpected internal illegal argument")
+        val response = handler.onUnhandledException(ex)
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNotNull(response.body)
         assertEquals(ServerError.INTERNAL_SERVER_ERROR, response.body?.code)
         assertEquals("An unexpected error occurred", response.body?.message)
     }

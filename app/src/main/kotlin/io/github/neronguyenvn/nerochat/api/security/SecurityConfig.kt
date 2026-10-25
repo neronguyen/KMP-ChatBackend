@@ -65,7 +65,7 @@ class SecurityConfig(
             .build()
     }
 
-    private fun apiAuthenticationEntryPoint(): AuthenticationEntryPoint =
+    internal fun apiAuthenticationEntryPoint(): AuthenticationEntryPoint =
         AuthenticationEntryPoint { _, response, _ ->
             response.status = HttpServletResponse.SC_UNAUTHORIZED
             response.contentType = MediaType.APPLICATION_JSON_VALUE
@@ -76,7 +76,7 @@ class SecurityConfig(
             response.writer.write(json.encodeToString(errorResponse))
         }
 
-    private fun apiAccessDeniedHandler(): AccessDeniedHandler =
+    internal fun apiAccessDeniedHandler(): AccessDeniedHandler =
         AccessDeniedHandler { _, response, _ ->
             response.status = HttpServletResponse.SC_FORBIDDEN
             response.contentType = MediaType.APPLICATION_JSON_VALUE

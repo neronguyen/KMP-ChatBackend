@@ -1,11 +1,6 @@
 package io.github.neronguyenvn.nerochat.chat.api.advice
 
-import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
-import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
-import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
-import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
-import io.github.neronguyenvn.nerochat.chat.domain.exception.MessageNotFoundException
-import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.*
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
 import org.springframework.core.Ordered
@@ -52,15 +47,6 @@ class ChatExceptionHandler {
             ApiErrorResponse(
                 code = ChatServerError.InvalidChatRoomSize.code,
                 message = e.message ?: "Invalid chat room size",
-            )
-        )
-
-    @ExceptionHandler(DuplicateMessageIdException::class)
-    fun onDuplicateMessageId(e: DuplicateMessageIdException): ResponseEntity<ApiErrorResponse> =
-        ResponseEntity.status(HttpStatus.CONFLICT).body(
-            ApiErrorResponse(
-                code = ChatServerError.DuplicateMessageId.code,
-                message = e.message ?: "Duplicate message ID",
             )
         )
 

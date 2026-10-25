@@ -2,33 +2,23 @@ package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.api.annotation.ApiErrors
 import io.github.neronguyenvn.nerochat.api.util.requesterId
+import io.github.neronguyenvn.nerochat.api.validation.requireValidUuid
 import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
-import io.github.neronguyenvn.nerochat.contract.chat.AddChatParticipantRequest
-import io.github.neronguyenvn.nerochat.contract.chat.CreateDirectChatRoomRequest
-import io.github.neronguyenvn.nerochat.contract.chat.CreateGroupChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
-import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
-import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomDto
+import io.github.neronguyenvn.nerochat.contract.chat.*
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
-import jakarta.validation.Valid
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import jakarta.validation.Valid
+import org.springframework.web.bind.annotation.*
 import java.time.Instant
 
 @Tag(name = "Chat Rooms", description = "Chat room management")
@@ -59,6 +49,7 @@ class ChatRoomController(
     fun getChatRoom(
         @PathVariable("roomId") roomId: ChatRoomId,
     ): ChatRoomDto {
+        roomId.requireValidUuid()
         return chatRoomService
             .getChatRoomById(roomId = roomId, requesterId = requesterId)
             ?.asDto() ?: throw ChatRoomNotFoundException()
@@ -76,6 +67,7 @@ class ChatRoomController(
         @PathVariable("roomId") roomId: ChatRoomId,
         @RequestParam("before", required = false) before: Instant? = null,
     ): ChatMessageSliceDto {
+        roomId.requireValidUuid()
         chatRoomService.getChatRoomById(roomId, requesterId)
             ?: throw ForbiddenException()
 
@@ -144,6 +136,7 @@ class ChatRoomController(
         @PathVariable("roomId") roomId: ChatRoomId,
         @Valid @RequestBody body: AddChatParticipantRequest,
     ): ChatRoomDto {
+        roomId.requireValidUuid()
         return chatRoomService.addParticipantsToChatRoom(
             requesterId = requesterId,
             roomId = roomId,
@@ -163,6 +156,7 @@ class ChatRoomController(
     fun leaveChatRoom(
         @PathVariable("roomId") roomId: ChatRoomId,
     ) {
+        roomId.requireValidUuid()
         chatRoomService.removeParticipantFromChatRoom(
             roomId = roomId,
             userId = requesterId

@@ -19,13 +19,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.springframework.http.HttpHeaders
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
-import java.util.UUID
+import java.util.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -172,7 +170,11 @@ class ChatWebSocketHandlerTest {
 
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
-        assertEquals("DUPLICATE_MESSAGE_ID", (event as WsServerEvent.Error).code)
+        val errorEvent = event as WsServerEvent.Error
+        assertEquals("DUPLICATE_MESSAGE_ID", errorEvent.code)
+        assertEquals("Message with ID $conflictingMessageId already exists", errorEvent.message)
+        assertEquals(roomId.value, errorEvent.roomId)
+        assertEquals(conflictingMessageId.value, errorEvent.messageId)
     }
 
     @Test
