@@ -10,6 +10,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotF
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
+import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomDto
@@ -33,7 +34,10 @@ import java.time.Instant
 @Tag(name = "Chat Rooms", description = "Chat room management")
 @RestController
 @RequestMapping("/api/chat/rooms")
-class ChatRoomController(private val chatRoomService: ChatRoomService) {
+class ChatRoomController(
+    private val chatRoomService: ChatRoomService,
+    private val chatMessageService: ChatMessageService,
+) {
 
     @Operation(summary = "Get user chat rooms", description = "Retrieves all chat rooms the requester is part of")
     @GetMapping
@@ -75,7 +79,7 @@ class ChatRoomController(private val chatRoomService: ChatRoomService) {
         chatRoomService.getChatRoomById(roomId, requesterId)
             ?: throw ForbiddenException()
 
-        return chatRoomService.getChatMessages(
+        return chatMessageService.getChatMessages(
             roomId = roomId,
             before = before,
         )

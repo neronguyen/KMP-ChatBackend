@@ -27,6 +27,8 @@ import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.springframework.cache.CacheManager
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.SliceImpl
 import java.time.Instant
 import java.util.Optional
 import java.util.UUID
@@ -238,5 +240,71 @@ class ChatMessageServiceTest {
 
         verify(chatMessageRepository, never()).saveAndFlush(any(ChatMessageEntity::class.java))
         verifyNoInteractions(eventPublisher)
+    }
+
+    @Test
+    fun `getChatMessages calls findByRoomId when before is null`() {
+        val roomId = ChatRoomId(UUID.randomUUID())
+        val message = ChatMessageEntity(
+            id = UUID.randomUUID(),
+            roomId = roomId.asUUID(),
+            sender = senderEntity,
+            content = "Hello",
+            createdAt = Instant.now()
+        )
+        `when`(
+            chatMessageRepository.findByRoomId(
+                any() ?: roomId.asUUID(),
+                any() ?: PageRequest.of(0, 20)
+            )
+        ).thenReturn(SliceImpl(listOf(message)))
+
+        val result = chatMessageService.getChatMessages(roomId = roomId, before = null)
+
+        assertEquals(1, result.messages.size)
+        assertEquals("Hello", result.messages.first().content)
+        verify(chatMessageRepository).findByRoomId(
+            any() ?: roomId.asUUID(),
+            any() ?: PageRequest.of(0, 20)
+        )
+        verify(chatMessageRepository, never()).findByRoomIdBefore(
+            any() ?: roomId.asUUID(),
+            any() ?: Instant.EPOCH,
+            any() ?: PageRequest.of(0, 20)
+        )
+    }
+
+    @Test
+    fun `getChatMessages calls findByRoomIdBefore when before is provided`() {
+        val roomId = ChatRoomId(UUID.randomUUID())
+        val before = Instant.now()
+        val message = ChatMessageEntity(
+            id = UUID.randomUUID(),
+            roomId = roomId.asUUID(),
+            sender = senderEntity,
+            content = "Old Hello",
+            createdAt = before.minusSeconds(60)
+        )
+        `when`(
+            chatMessageRepository.findByRoomIdBefore(
+                any() ?: roomId.asUUID(),
+                any() ?: before,
+                any() ?: PageRequest.of(0, 20)
+            )
+        ).thenReturn(SliceImpl(listOf(message)))
+
+        val result = chatMessageService.getChatMessages(roomId = roomId, before = before)
+
+        assertEquals(1, result.messages.size)
+        assertEquals("Old Hello", result.messages.first().content)
+        verify(chatMessageRepository).findByRoomIdBefore(
+            any() ?: roomId.asUUID(),
+            any() ?: before,
+            any() ?: PageRequest.of(0, 20)
+        )
+        verify(chatMessageRepository, never()).findByRoomId(
+            any() ?: roomId.asUUID(),
+            any() ?: PageRequest.of(0, 20)
+        )
     }
 }

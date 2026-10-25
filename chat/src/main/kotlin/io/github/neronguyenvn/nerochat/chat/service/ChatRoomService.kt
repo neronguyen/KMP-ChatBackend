@@ -15,20 +15,15 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.model.asExternalModel
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessageRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
-import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
-import io.github.neronguyenvn.nerochat.infra.caching.CacheNames
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -39,36 +34,6 @@ class ChatRoomService(
     private val chatMessageRepository: ChatMessageRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
-    @Cacheable(
-        value = [CacheNames.MESSAGES],
-        key = "#roomId",
-        condition = "#before == null",
-        sync = true
-    )
-    fun getChatMessages(
-        roomId: ChatRoomId,
-        before: Instant?,
-    ): ChatMessageSliceDto {
-        val pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
-        val slice = if (before == null) {
-            chatMessageRepository.findByRoomId(
-                roomId = roomId.asUUID(),
-                pageable = pageable
-            )
-        } else {
-            chatMessageRepository.findByRoomIdBefore(
-                roomId = roomId.asUUID(),
-                before = before.truncatedTo(ChronoUnit.MILLIS),
-                pageable = pageable
-            )
-        }
-
-        return ChatMessageSliceDto(
-            messages = slice.content.asReversed().map { it.asExternalModel().asDto() },
-            hasMore = slice.hasNext()
-        )
-    }
-
     fun getChatRoomById(
         roomId: ChatRoomId,
         requesterId: UserId
@@ -281,9 +246,5 @@ class ChatRoomService(
             .findLatestMessagesByRoomIds(setOf(roomId.asUUID()))
             .firstOrNull()
             ?.asExternalModel()
-    }
-
-    companion object {
-        private const val DEFAULT_PAGE_SIZE = 20
     }
 }

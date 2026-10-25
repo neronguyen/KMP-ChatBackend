@@ -5,6 +5,7 @@ import io.github.neronguyenvn.nerochat.contract.chat.CreateGroupChatRoomRequest
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
+import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageDto
 import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
@@ -34,6 +35,7 @@ import kotlin.time.ExperimentalTime
 class ChatRoomControllerTest {
 
     private lateinit var chatRoomService: ChatRoomService
+    private lateinit var chatMessageService: ChatMessageService
     private lateinit var controller: ChatRoomController
 
     private val userId = UserId(UUID.randomUUID())
@@ -42,7 +44,8 @@ class ChatRoomControllerTest {
     @BeforeEach
     fun setUp() {
         chatRoomService = mock(ChatRoomService::class.java)
-        controller = ChatRoomController(chatRoomService)
+        chatMessageService = mock(ChatMessageService::class.java)
+        controller = ChatRoomController(chatRoomService, chatMessageService)
 
         val authentication = UsernamePasswordAuthenticationToken(userId, null, emptyList())
         SecurityContextHolder.getContext().authentication = authentication
@@ -70,13 +73,13 @@ class ChatRoomControllerTest {
             ),
             hasMore = false
         )
-        `when`(chatRoomService.getChatMessages(chatRoomId, null)).thenReturn(expectedResponse)
+        `when`(chatMessageService.getChatMessages(chatRoomId, null)).thenReturn(expectedResponse)
 
         val result = controller.getChatMessages(roomId = chatRoomId)
 
         assertEquals(expectedResponse, result)
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
-        verify(chatRoomService).getChatMessages(chatRoomId, null)
+        verify(chatMessageService).getChatMessages(chatRoomId, null)
     }
 
     @Test
@@ -88,7 +91,7 @@ class ChatRoomControllerTest {
         }
 
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
-        verifyNoMoreInteractions(chatRoomService)
+        verifyNoMoreInteractions(chatRoomService, chatMessageService)
     }
 
     @Test
