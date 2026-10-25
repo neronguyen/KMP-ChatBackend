@@ -13,6 +13,7 @@ import io.github.neronguyenvn.nerochat.chat.service.ChatParticipantService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
 import io.github.neronguyenvn.nerochat.contract.error.ServerError
+import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.service.JwtService
 import io.github.neronguyenvn.nerochat.user.api.advice.AuthExceptionHandler
 import io.github.neronguyenvn.nerochat.user.api.controller.AuthController
@@ -25,7 +26,7 @@ import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
+import org.mockito.Mockito.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -37,12 +38,12 @@ import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
+import java.util.*
 
 @SpringBootTest(classes = [SecurityAndValidationIntegrationTest.TestConfig::class])
 class SecurityAndValidationIntegrationTest {
@@ -92,8 +93,19 @@ class SecurityAndValidationIntegrationTest {
     @Autowired
     private lateinit var securityConfig: SecurityConfig
 
+    @Autowired
+    private lateinit var jwtService: JwtService
+
+    @Autowired
+    private lateinit var chatRoomService: ChatRoomService
+
+    @Autowired
+    private lateinit var chatMessageService: ChatMessageService
+
     private lateinit var mockMvc: MockMvc
     private val json = Json { ignoreUnknownKeys = true }
+    private val validToken = "valid-test-access-token"
+    private val testUserId = UserId(UUID.randomUUID())
 
     @BeforeEach
     fun setUp() {
@@ -101,6 +113,9 @@ class SecurityAndValidationIntegrationTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac)
             .addFilter<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(springSecurityFilterChain)
             .build()
+
+        `when`(jwtService.validateAccessToken(validToken)).thenReturn(true)
+        `when`(jwtService.getUserIdFromToken(validToken)).thenReturn(testUserId)
     }
 
     @Test
@@ -181,5 +196,167 @@ class SecurityAndValidationIntegrationTest {
 
         assertEquals(ServerError.BAD_REQUEST, apiError.code)
         assertEquals("Malformed request body", apiError.message)
+    }
+
+    @Test
+    fun `GET room with malformed roomId returns 400 BAD_REQUEST and does not invoke service`() {
+        val result = mockMvc.perform(
+            get("/api/chat/rooms/not-a-valid-uuid")
+                .header("Authorization", "Bearer $validToken")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `GET messages with malformed roomId returns 400 BAD_REQUEST and does not invoke service`() {
+        val result = mockMvc.perform(
+            get("/api/chat/rooms/not-a-valid-uuid/messages")
+                .header("Authorization", "Bearer $validToken")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `DELETE leave room with malformed roomId returns 400 BAD_REQUEST and does not invoke service`() {
+        val result = mockMvc.perform(
+            delete("/api/chat/rooms/not-a-valid-uuid/leave")
+                .header("Authorization", "Bearer $validToken")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `POST add participants with malformed roomId returns 400 BAD_REQUEST and does not invoke service`() {
+        val validBody = """{"userIds": ["${UUID.randomUUID()}"]}"""
+
+        val result = mockMvc.perform(
+            post("/api/chat/rooms/not-a-valid-uuid/add")
+                .header("Authorization", "Bearer $validToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validBody)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `DELETE message with malformed messageId returns 400 BAD_REQUEST and does not invoke service`() {
+        val result = mockMvc.perform(
+            delete("/api/chat/messages/not-a-valid-uuid")
+                .header("Authorization", "Bearer $validToken")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        assertEquals("Parameter 'messageId' must be a valid UUID", apiError.message)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `POST direct room with malformed targetUserId returns 400 VALIDATION_FAILED and does not invoke service`() {
+        val invalidPayload = """
+            {
+                "targetUserId": "not-a-valid-uuid",
+                "message": "Hello"
+            }
+        """.trimIndent()
+
+        val result = mockMvc.perform(
+            post("/api/chat/rooms/direct")
+                .header("Authorization", "Bearer $validToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidPayload)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.VALIDATION_FAILED, apiError.code)
+        assertEquals("Target user ID must be a valid UUID", apiError.message)
+        assertEquals("Target user ID must be a valid UUID", apiError.fieldErrors["targetUserId"])
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `POST group room with malformed participantIds returns 400 VALIDATION_FAILED and does not invoke service`() {
+        val invalidPayload = """
+            {
+                "name": "Team",
+                "participantIds": ["${UUID.randomUUID()}", "not-a-valid-uuid"]
+            }
+        """.trimIndent()
+
+        val result = mockMvc.perform(
+            post("/api/chat/rooms/group")
+                .header("Authorization", "Bearer $validToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidPayload)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.VALIDATION_FAILED, apiError.code)
+        assertEquals("Participant ID must be a valid UUID", apiError.message)
+        assertEquals("Participant ID must be a valid UUID", apiError.fieldErrors["participantIds"])
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `POST add participants with malformed userIds returns 400 VALIDATION_FAILED and does not invoke service`() {
+        val validRoomId = UUID.randomUUID().toString()
+        val invalidPayload = """
+            {
+                "userIds": ["not-a-valid-uuid"]
+            }
+        """.trimIndent()
+
+        val result = mockMvc.perform(
+            post("/api/chat/rooms/$validRoomId/add")
+                .header("Authorization", "Bearer $validToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidPayload)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andReturn()
+
+        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
+        assertEquals(ServerError.VALIDATION_FAILED, apiError.code)
+        assertEquals("Participant ID must be a valid UUID", apiError.message)
+        assertEquals("Participant ID must be a valid UUID", apiError.fieldErrors["userIds"])
+        verifyNoInteractions(chatRoomService, chatMessageService)
     }
 }

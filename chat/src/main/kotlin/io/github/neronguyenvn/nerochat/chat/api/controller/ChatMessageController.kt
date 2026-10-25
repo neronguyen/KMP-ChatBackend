@@ -2,6 +2,7 @@ package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.api.annotation.ApiErrors
 import io.github.neronguyenvn.nerochat.api.util.requesterId
+import io.github.neronguyenvn.nerochat.api.validation.requireValidUuid
 import io.github.neronguyenvn.nerochat.chat.domain.exception.MessageNotFoundException
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
@@ -31,6 +32,7 @@ class ChatMessageController(private val chatMessageService: ChatMessageService) 
     fun deleteMessage(
         @PathVariable("messageId") messageId: ChatMessageId,
     ) {
+        messageId.requireValidUuid()
         chatMessageService.deleteMessage(messageId, requesterId)
     }
 }

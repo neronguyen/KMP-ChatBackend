@@ -1,33 +1,25 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
-import io.github.neronguyenvn.nerochat.contract.chat.CreateDirectChatRoomRequest
-import io.github.neronguyenvn.nerochat.contract.chat.CreateGroupChatRoomRequest
+import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
-import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageDto
-import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
-import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
+import io.github.neronguyenvn.nerochat.contract.chat.*
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoMoreInteractions
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
-import java.util.UUID
+import java.util.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -203,5 +195,55 @@ class ChatRoomControllerTest {
         assertNull(result.lastMessage)
 
         verify(chatRoomService).createGroupChatRoom(userId, "Awesome Group", listOf(member1, member2))
+    }
+
+    @Test
+    fun `getChatRoom throws InvalidUuidException when roomId is invalid`() {
+        val invalidRoomId = ChatRoomId("not-a-valid-uuid")
+
+        val ex = assertThrows<InvalidUuidException> {
+            controller.getChatRoom(roomId = invalidRoomId)
+        }
+
+        assertEquals("roomId", ex.parameterName)
+        assertEquals("not-a-valid-uuid", ex.invalidValue)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `getChatMessages throws InvalidUuidException when roomId is invalid`() {
+        val invalidRoomId = ChatRoomId("not-a-valid-uuid")
+
+        val ex = assertThrows<InvalidUuidException> {
+            controller.getChatMessages(roomId = invalidRoomId)
+        }
+
+        assertEquals("roomId", ex.parameterName)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `leaveChatRoom throws InvalidUuidException when roomId is invalid`() {
+        val invalidRoomId = ChatRoomId("not-a-valid-uuid")
+
+        val ex = assertThrows<InvalidUuidException> {
+            controller.leaveChatRoom(roomId = invalidRoomId)
+        }
+
+        assertEquals("roomId", ex.parameterName)
+        verifyNoInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `addParticipants throws InvalidUuidException when roomId is invalid`() {
+        val invalidRoomId = ChatRoomId("not-a-valid-uuid")
+        val request = AddChatParticipantRequest(userIds = listOf(UUID.randomUUID().toString()))
+
+        val ex = assertThrows<InvalidUuidException> {
+            controller.addParticipants(roomId = invalidRoomId, body = request)
+        }
+
+        assertEquals("roomId", ex.parameterName)
+        verifyNoInteractions(chatRoomService, chatMessageService)
     }
 }

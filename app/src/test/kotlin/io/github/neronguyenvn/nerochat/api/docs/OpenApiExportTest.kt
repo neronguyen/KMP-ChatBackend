@@ -166,9 +166,10 @@ class OpenApiExportTest {
 
         val openApiFile = File(docsDir, "openapi.json")
         assertTrue(openApiFile.exists(), "Committed docs/openapi.json is missing; run './gradlew :app:exportApiDocs'")
+        val objectMapper = ObjectMapper()
         assertEquals(
-            openApiFile.readText().replace("\r\n", "\n"),
-            openApiJson.replace("\r\n", "\n"),
+            objectMapper.readTree(openApiFile),
+            objectMapper.readTree(openApiJson),
             "docs/openapi.json is stale; run './gradlew :app:exportApiDocs' to regenerate"
         )
 

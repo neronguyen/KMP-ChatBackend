@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.api.advice
 
+import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.contract.error.ServerError
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -12,6 +13,7 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.server.ResponseStatusException
 
 class CommonExceptionHandlerTest {
@@ -97,5 +99,53 @@ class CommonExceptionHandlerTest {
         assertEquals(listOf("Email format is invalid", "Password cannot be blank"), response.body?.errors)
         assertEquals("Email format is invalid", response.body?.fieldErrors?.get("email"))
         assertEquals("Password cannot be blank", response.body?.fieldErrors?.get("password"))
+    }
+
+    @Test
+    fun `handles InvalidUuidException with 400 status and does not leak invalid value`() {
+        val ex = InvalidUuidException(parameterName = "roomId", invalidValue = "not-a-valid-uuid")
+        val response = handler.onInvalidUuid(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.BAD_REQUEST, response.body?.code)
+        assertEquals("Parameter 'roomId' must be a valid UUID", response.body?.message)
+        assertFalse(response.body?.message?.contains("not-a-valid-uuid") == true)
+    }
+
+    @Test
+    fun `handles MethodArgumentTypeMismatchException with 400 status without echoing invalid value`() {
+        val method = javaClass.getDeclaredMethod("dummyMethod", String::class.java)
+        val parameter = MethodParameter(method, 0)
+        val ex = MethodArgumentTypeMismatchException("raw-value", String::class.java, "filterId", parameter, null)
+        val response = handler.onTypeMismatch(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.BAD_REQUEST, response.body?.code)
+        assertEquals("Invalid parameter: 'filterId'", response.body?.message)
+        assertFalse(response.body?.message?.contains("raw-value") == true)
+    }
+
+    @Test
+    fun `treats unhandled IllegalArgumentException as 500 internal server error`() {
+        val ex = IllegalArgumentException("Unexpected internal illegal argument")
+        val response = handler.onUnhandledException(ex)
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.INTERNAL_SERVER_ERROR, response.body?.code)
+        assertEquals("An unexpected error occurred", response.body?.message)
+    }
+
+    @Test
+    fun `handles ErrorResponse with 5xx status returning generic 500 error response`() {
+        val ex = ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Database connection failed")
+        val response = handler.onErrorResponse(ex)
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ServerError.INTERNAL_SERVER_ERROR, response.body?.code)
+        assertEquals("An unexpected error occurred", response.body?.message)
     }
 }
