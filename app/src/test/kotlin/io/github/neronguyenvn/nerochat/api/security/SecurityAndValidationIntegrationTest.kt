@@ -144,7 +144,7 @@ class SecurityAndValidationIntegrationTest {
         assertEquals(MediaType.APPLICATION_JSON_VALUE, response.contentType)
 
         val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(response.contentAsString)
-        assertEquals(CommonServerError.Forbidden, apiError.error)
+        assertEquals(CommonServerError.Unauthorized, apiError.error)
         assertEquals("Access denied", apiError.message)
     }
 

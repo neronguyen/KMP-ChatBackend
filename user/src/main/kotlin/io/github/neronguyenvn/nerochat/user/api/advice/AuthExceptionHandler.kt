@@ -5,14 +5,12 @@ import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
-import io.github.neronguyenvn.nerochat.user.domain.exception.RateLimitExceededException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
 import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -84,16 +82,4 @@ class AuthExceptionHandler {
                 message = e.message,
             )
         )
-
-    @ExceptionHandler(RateLimitExceededException::class)
-    fun onRateLimitExceeded(e: RateLimitExceededException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
-        ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-            .header(HttpHeaders.RETRY_AFTER, e.resetsInSeconds.toString())
-            .body(
-                ApiErrorResponse(
-                    error = AuthServerError.RateLimitExceeded,
-                    message = e.message,
-                    retryAfterSeconds = e.resetsInSeconds,
-                )
-            )
 }

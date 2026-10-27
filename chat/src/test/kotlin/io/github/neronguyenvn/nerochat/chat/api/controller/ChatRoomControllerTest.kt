@@ -1,13 +1,14 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
 import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.chat.*
-import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -51,6 +52,7 @@ class ChatRoomControllerTest {
     @Test
     fun `getChatMessages returns messages when requester is participant`() {
         val chatRoom = mock(ChatRoom::class.java)
+        `when`(chatRoomService.existsById(chatRoomId)).thenReturn(true)
         `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(chatRoom)
 
         val expectedResponse = ChatMessageSliceDto(
@@ -70,18 +72,33 @@ class ChatRoomControllerTest {
         val result = controller.getChatMessages(roomId = chatRoomId)
 
         assertEquals(expectedResponse, result)
+        verify(chatRoomService).existsById(chatRoomId)
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
         verify(chatMessageService).getChatMessages(chatRoomId, null)
     }
 
     @Test
-    fun `getChatMessages throws ForbiddenException when requester is not participant`() {
-        `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(null)
+    fun `getChatMessages throws ChatRoomNotFoundException when room does not exist`() {
+        `when`(chatRoomService.existsById(chatRoomId)).thenReturn(false)
 
-        assertThrows<ForbiddenException> {
+        assertThrows<ChatRoomNotFoundException> {
             controller.getChatMessages(roomId = chatRoomId)
         }
 
+        verify(chatRoomService).existsById(chatRoomId)
+        verifyNoMoreInteractions(chatRoomService, chatMessageService)
+    }
+
+    @Test
+    fun `getChatMessages throws ParticipantNotInRoomException when requester is not participant`() {
+        `when`(chatRoomService.existsById(chatRoomId)).thenReturn(true)
+        `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(null)
+
+        assertThrows<ParticipantNotInRoomException> {
+            controller.getChatMessages(roomId = chatRoomId)
+        }
+
+        verify(chatRoomService).existsById(chatRoomId)
         verify(chatRoomService).getChatRoomById(chatRoomId, userId)
         verifyNoMoreInteractions(chatRoomService, chatMessageService)
     }

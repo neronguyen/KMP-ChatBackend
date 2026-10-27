@@ -84,16 +84,6 @@
         } ],
         "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       }, {
-        "name" : "403 Forbidden. Contract error codes: `Forbidden`",
-        "status" : "Forbidden",
-        "code" : 403,
-        "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"error\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
-      }, {
         "name" : "404 Not Found. Contract error codes: `ChatRoomNotFound`, `ChatParticipantNotFound`",
         "status" : "Not Found",
         "code" : 404,
@@ -113,6 +103,16 @@
           "value" : "application/json"
         } ],
         "body" : "{\n  \"error\" : \"USER_ALREADY_EXISTS\",\n  \"message\" : \"User with this email already exists\"\n}"
+      }, {
+        "name" : "403 Forbidden. Contract error codes: `ParticipantNotInRoom`",
+        "status" : "Forbidden",
+        "code" : 403,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"FORBIDDEN\",\n  \"message\" : \"Access denied\"\n}"
       } ]
     }, {
       "name" : "Create group chat room",
@@ -428,7 +428,17 @@
         } ],
         "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       }, {
-        "name" : "403 Forbidden. Contract error codes: `Forbidden`",
+        "name" : "404 Not Found. Contract error codes: `ChatRoomNotFound`",
+        "status" : "Not Found",
+        "code" : 404,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"CHAT_ROOM_NOT_FOUND\",\n  \"message\" : \"Chat room not found\"\n}"
+      }, {
+        "name" : "403 Forbidden. Contract error codes: `ParticipantNotInRoom`",
         "status" : "Forbidden",
         "code" : 403,
         "_postman_previewlanguage" : "json",
@@ -1169,7 +1179,7 @@
         } ],
         "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       }, {
-        "name" : "403 Forbidden. Contract error codes: `Forbidden`",
+        "name" : "403 Forbidden. Contract error codes: `NotMessageSender`",
         "status" : "Forbidden",
         "code" : 403,
         "_postman_previewlanguage" : "json",

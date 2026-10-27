@@ -7,6 +7,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotF
 import io.github.neronguyenvn.nerochat.chat.service.ChatParticipantService
 import io.github.neronguyenvn.nerochat.contract.chat.ChatParticipantDto
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
+import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -22,7 +23,7 @@ class ChatParticipantController(private val chatParticipantService: ChatParticip
     @Operation(summary = "Get chat participant", description = "Looks up a chat participant by email or returns the requester")
     @GetMapping
     @ApiErrors(
-        ChatServerError.Unauthorized::class,
+        CommonServerError.Unauthorized::class,
         ChatServerError.ChatParticipantNotFound::class,
     )
     @Throws(ChatParticipantNotFoundException::class)

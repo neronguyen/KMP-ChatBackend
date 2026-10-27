@@ -8,11 +8,12 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotF
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.chat.*
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
-import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
+import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.swagger.v3.oas.annotations.Operation
@@ -31,7 +32,7 @@ class ChatRoomController(
 
     @Operation(summary = "Get user chat rooms", description = "Retrieves all chat rooms the requester is part of")
     @GetMapping
-    @ApiErrors(ChatServerError.Unauthorized::class)
+    @ApiErrors(CommonServerError.Unauthorized::class)
     fun getChatRooms(): List<ChatRoomDto> {
         return chatRoomService
             .findChatRoomsByUser(userId = requesterId)
@@ -41,8 +42,8 @@ class ChatRoomController(
     @Operation(summary = "Get chat room by ID", description = "Retrieves details of a specific chat room")
     @GetMapping("/{roomId}")
     @ApiErrors(
-        ChatServerError.Unauthorized::class,
-        ChatServerError.BadRequest::class,
+        CommonServerError.Unauthorized::class,
+        CommonServerError.BadRequest::class,
         ChatServerError.ChatRoomNotFound::class,
     )
     @Throws(ChatRoomNotFoundException::class)
@@ -58,18 +59,22 @@ class ChatRoomController(
     @Operation(summary = "Get chat room messages", description = "Retrieves paginated messages for a chat room")
     @GetMapping("/{roomId}/messages")
     @ApiErrors(
-        ChatServerError.Unauthorized::class,
-        ChatServerError.BadRequest::class,
-        ChatServerError.Forbidden::class,
+        CommonServerError.Unauthorized::class,
+        CommonServerError.BadRequest::class,
+        ChatServerError.ChatRoomNotFound::class,
+        ChatServerError.ParticipantNotInRoom::class,
     )
-    @Throws(ForbiddenException::class)
+    @Throws(ParticipantNotInRoomException::class, ChatRoomNotFoundException::class)
     fun getChatMessages(
         @PathVariable("roomId") roomId: ChatRoomId,
         @RequestParam("before", required = false) before: Instant? = null,
     ): ChatMessageSliceDto {
         roomId.requireValidUuid()
+        if (!chatRoomService.existsById(roomId)) {
+            throw ChatRoomNotFoundException()
+        }
         chatRoomService.getChatRoomById(roomId, requesterId)
-            ?: throw ForbiddenException()
+            ?: throw ParticipantNotInRoomException()
 
         return chatMessageService.getChatMessages(
             roomId = roomId,
@@ -80,8 +85,8 @@ class ChatRoomController(
     @Operation(summary = "Create direct chat room", description = "Creates a 1-on-1 direct chat room")
     @PostMapping("/direct")
     @ApiErrors(
-        ChatServerError.Unauthorized::class,
-        ChatServerError.ValidationFailed::class,
+        CommonServerError.Unauthorized::class,
+        CommonServerError.ValidationFailed::class,
         ChatServerError.ChatParticipantNotFound::class,
         ChatServerError.InvalidChatRoomSize::class,
     )
@@ -99,8 +104,8 @@ class ChatRoomController(
     @Operation(summary = "Create group chat room", description = "Creates a group chat room with multiple participants")
     @PostMapping("/group")
     @ApiErrors(
-        ChatServerError.Unauthorized::class,
-        ChatServerError.ValidationFailed::class,
+        CommonServerError.Unauthorized::class,
+        CommonServerError.ValidationFailed::class,
         ChatServerError.ChatParticipantNotFound::class,
         ChatServerError.InvalidChatRoomSize::class,
     )
@@ -118,18 +123,18 @@ class ChatRoomController(
     @Operation(summary = "Add participants to group chat room", description = "Adds new participants to an existing group chat room")
     @PostMapping("/{roomId}/add")
     @ApiErrors(
-        ChatServerError.Unauthorized::class,
-        ChatServerError.BadRequest::class,
-        ChatServerError.ValidationFailed::class,
-        ChatServerError.Forbidden::class,
+        CommonServerError.Unauthorized::class,
+        CommonServerError.BadRequest::class,
+        CommonServerError.ValidationFailed::class,
         ChatServerError.ChatRoomNotFound::class,
         ChatServerError.ChatParticipantNotFound::class,
         ChatServerError.ParticipantAlreadyInRoom::class,
+        ChatServerError.ParticipantNotInRoom::class,
     )
     @Throws(
         ChatRoomNotFoundException::class,
         ChatParticipantNotFoundException::class,
-        ForbiddenException::class,
+        ParticipantNotInRoomException::class,
         ParticipantAlreadyInRoomException::class,
     )
     fun addParticipants(
@@ -147,8 +152,8 @@ class ChatRoomController(
     @Operation(summary = "Leave chat room", description = "Leaves a chat room")
     @DeleteMapping("/{roomId}/leave")
     @ApiErrors(
-        ChatServerError.Unauthorized::class,
-        ChatServerError.BadRequest::class,
+        CommonServerError.Unauthorized::class,
+        CommonServerError.BadRequest::class,
         ChatServerError.ChatRoomNotFound::class,
         ChatServerError.ChatParticipantNotFound::class,
     )

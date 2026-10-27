@@ -1,4 +1,4 @@
-package io.github.neronguyenvn.nerochat.user.domain.exception
+package io.github.neronguyenvn.nerochat.domain.exception
 
 class RateLimitExceededException(
     val resetsInSeconds: Long,

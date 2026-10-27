@@ -1,6 +1,9 @@
 package io.github.neronguyenvn.nerochat.chat.service
 
+import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.MessageNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.NotMessageSenderException
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatParticipantEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
@@ -306,5 +309,57 @@ class ChatMessageServiceTest {
             any() ?: roomId.asUUID(),
             any() ?: PageRequest.of(0, 20)
         )
+    }
+
+    @Test
+    fun `deleteMessage successfully deletes message and publishes event when requester is sender`() {
+        val messageId = ChatMessageId(UUID.randomUUID().toString())
+        val messageEntity = ChatMessageEntity(
+            id = messageId.asUUID(),
+            roomId = roomId.asUUID(),
+            sender = senderEntity,
+            content = "To be deleted",
+            createdAt = Instant.now()
+        )
+        `when`(chatMessageRepository.findById(messageId.asUUID())).thenReturn(Optional.of(messageEntity))
+
+        chatMessageService.deleteMessage(messageId = messageId, requesterId = senderId)
+
+        verify(chatMessageRepository).delete(messageEntity)
+        val captor: ArgumentCaptor<Any> = ArgumentCaptor.forClass(Any::class.java)
+        verify(applicationEventPublisher).publishEvent(captor.capture())
+        val event = captor.value as InternalChatEvent.MessageDeletedEvent
+        assertEquals(messageId, event.messageId)
+    }
+
+    @Test
+    fun `deleteMessage throws NotMessageSenderException when requester is not sender`() {
+        val messageId = ChatMessageId(UUID.randomUUID().toString())
+        val messageEntity = ChatMessageEntity(
+            id = messageId.asUUID(),
+            roomId = roomId.asUUID(),
+            sender = senderEntity,
+            content = "Not yours",
+            createdAt = Instant.now()
+        )
+        `when`(chatMessageRepository.findById(messageId.asUUID())).thenReturn(Optional.of(messageEntity))
+
+        assertThrows<NotMessageSenderException> {
+            chatMessageService.deleteMessage(messageId = messageId, requesterId = otherSenderId)
+        }
+
+        verify(chatMessageRepository, never()).delete(any())
+    }
+
+    @Test
+    fun `deleteMessage throws MessageNotFoundException when message does not exist`() {
+        val messageId = ChatMessageId(UUID.randomUUID().toString())
+        `when`(chatMessageRepository.findById(messageId.asUUID())).thenReturn(Optional.empty())
+
+        assertThrows<MessageNotFoundException> {
+            chatMessageService.deleteMessage(messageId = messageId, requesterId = senderId)
+        }
+
+        verify(chatMessageRepository, never()).delete(any())
     }
 }

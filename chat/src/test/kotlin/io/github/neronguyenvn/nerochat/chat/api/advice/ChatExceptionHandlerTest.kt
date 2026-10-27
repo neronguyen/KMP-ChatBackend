@@ -71,4 +71,26 @@ class ChatExceptionHandlerTest {
         assertEquals(ChatServerError.ParticipantAlreadyInRoom, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
+
+    @Test
+    fun `onParticipantNotInRoom returns 403 and PARTICIPANT_NOT_IN_ROOM error`() {
+        val ex = ParticipantNotInRoomException()
+        val response = handler.onParticipantNotInRoom(ex)
+
+        assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ChatServerError.ParticipantNotInRoom, response.body?.error)
+        assertEquals(ex.message, response.body?.message)
+    }
+
+    @Test
+    fun `onNotMessageSender returns 403 and NOT_MESSAGE_SENDER error`() {
+        val ex = NotMessageSenderException()
+        val response = handler.onNotMessageSender(ex)
+
+        assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(ChatServerError.NotMessageSender, response.body?.error)
+        assertEquals(ex.message, response.body?.message)
+    }
 }

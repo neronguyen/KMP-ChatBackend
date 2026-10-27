@@ -4,7 +4,6 @@ import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
-import io.github.neronguyenvn.nerochat.user.domain.exception.RateLimitExceededException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
@@ -12,7 +11,6 @@ import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordExcept
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 
 class AuthExceptionHandlerTest {
@@ -94,18 +92,5 @@ class AuthExceptionHandlerTest {
         assertNotNull(response.body)
         assertEquals(AuthServerError.UserAlreadyExists, response.body?.error)
         assertEquals(ex.message, response.body?.message)
-    }
-
-    @Test
-    fun `onRateLimitExceeded returns 429, RATE_LIMIT_EXCEEDED error and retryAfterSeconds header and body`() {
-        val resetsInSeconds = 45L
-        val ex = RateLimitExceededException(resetsInSeconds)
-        val response = handler.onRateLimitExceeded(ex)
-
-        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.statusCode)
-        assertNotNull(response.body)
-        assertEquals(AuthServerError.RateLimitExceeded, response.body?.error)
-        assertEquals(resetsInSeconds, response.body?.retryAfterSeconds)
-        assertEquals("45", response.headers.getFirst(HttpHeaders.RETRY_AFTER))
     }
 }

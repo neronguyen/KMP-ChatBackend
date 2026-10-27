@@ -6,6 +6,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotF
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
@@ -16,13 +17,14 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessag
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
-import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import kotlin.time.ExperimentalTime
 
@@ -34,6 +36,9 @@ class ChatRoomService(
     private val chatMessageRepository: ChatMessageRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
+    fun existsById(roomId: ChatRoomId): Boolean =
+        chatRoomRepository.existsById(roomId.asUUID())
+
     fun getChatRoomById(
         roomId: ChatRoomId,
         requesterId: UserId
@@ -172,7 +177,7 @@ class ChatRoomService(
             ?: throw ChatRoomNotFoundException()
 
         if (chatRoom.type == ChatRoomType.DIRECT) {
-            throw ForbiddenException()
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot add participants to a direct chat room")
         }
 
         val isRequesterInChatRoom = chatRoom.participants.any {
@@ -180,7 +185,7 @@ class ChatRoomService(
         }
 
         if (!isRequesterInChatRoom) {
-            throw ForbiddenException()
+            throw ParticipantNotInRoomException()
         }
 
         val chatParticipantIds = chatRoom.participants.map { UserId(it.userId) }.toSet()

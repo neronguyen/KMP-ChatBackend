@@ -56,9 +56,6 @@ class OpenApiConfig {
             is AuthServerError.UserNotFound -> HttpStatus.NOT_FOUND
             is AuthServerError.WrongPassword -> HttpStatus.UNAUTHORIZED
             is AuthServerError.SamePassword -> HttpStatus.CONFLICT
-            is AuthServerError.Unauthorized -> HttpStatus.UNAUTHORIZED
-            is AuthServerError.RateLimitExceeded -> HttpStatus.TOO_MANY_REQUESTS
-            is AuthServerError.ValidationFailed -> HttpStatus.BAD_REQUEST
 
             is ChatServerError.ChatRoomNotFound -> HttpStatus.NOT_FOUND
             is ChatServerError.ChatParticipantNotFound -> HttpStatus.NOT_FOUND
@@ -66,17 +63,15 @@ class OpenApiConfig {
             is ChatServerError.InvalidChatRoomSize -> HttpStatus.BAD_REQUEST
             is ChatServerError.DuplicateMessageId -> HttpStatus.CONFLICT
             is ChatServerError.ParticipantAlreadyInRoom -> HttpStatus.CONFLICT
-            is ChatServerError.Forbidden -> HttpStatus.FORBIDDEN
-            is ChatServerError.ValidationFailed -> HttpStatus.BAD_REQUEST
-            is ChatServerError.Unauthorized -> HttpStatus.UNAUTHORIZED
-            is ChatServerError.BadRequest -> HttpStatus.BAD_REQUEST
+            is ChatServerError.ParticipantNotInRoom -> HttpStatus.FORBIDDEN
+            is ChatServerError.NotMessageSender -> HttpStatus.FORBIDDEN
             is ChatServerError.InvalidJson -> HttpStatus.BAD_REQUEST
             is ChatServerError.InvalidPayload -> HttpStatus.BAD_REQUEST
             is ChatServerError.MessageSendFailed -> HttpStatus.INTERNAL_SERVER_ERROR
 
             is CommonServerError.BadRequest, is CommonServerError.ValidationFailed -> HttpStatus.BAD_REQUEST
             is CommonServerError.Unauthorized -> HttpStatus.UNAUTHORIZED
-            is CommonServerError.Forbidden -> HttpStatus.FORBIDDEN
+            is CommonServerError.RateLimitExceeded -> HttpStatus.TOO_MANY_REQUESTS
             is CommonServerError.InternalServerError -> HttpStatus.INTERNAL_SERVER_ERROR
             else -> HttpStatus.BAD_REQUEST
         }
