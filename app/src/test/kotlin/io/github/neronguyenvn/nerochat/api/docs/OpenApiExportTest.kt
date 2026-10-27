@@ -100,9 +100,9 @@ class OpenApiExportTest {
         assertTrue(json.contains("\"/api/auth/register\""))
         assertTrue(json.contains("\"/api/auth/login\""))
         assertTrue(json.contains("\"/api/chat/rooms\""))
-        assertTrue(json.contains("USER_ALREADY_EXISTS"))
-        assertTrue(json.contains("INVALID_CREDENTIALS"))
-        assertTrue(json.contains("VALIDATION_FAILED"))
+        assertTrue(json.contains("UserAlreadyExists"))
+        assertTrue(json.contains("InvalidCredentials"))
+        assertTrue(json.contains("ValidationFailed"))
         assertTrue(json.contains("ApiErrorResponse"))
         assertTrue(json.contains("bearerAuth"))
     }
@@ -117,21 +117,21 @@ class OpenApiExportTest {
         val schemaNode = rootNode.path("components").path("schemas").path("ApiErrorResponse")
         assertTrue(!schemaNode.isMissingNode, "ApiErrorResponse schema should be defined under components.schemas")
 
-        // 1. All five ApiErrorResponse properties remain present
+        // 1. ApiErrorResponse properties present
         val properties = schemaNode.path("properties")
-        assertTrue(properties.has("code"), "Property 'code' must be present")
+        assertTrue(properties.has("error"), "Property 'error' must be present")
         assertTrue(properties.has("message"), "Property 'message' must be present")
-        assertTrue(properties.has("errors"), "Property 'errors' must be present")
         assertTrue(properties.has("fieldErrors"), "Property 'fieldErrors' must be present")
         assertTrue(properties.has("retryAfterSeconds"), "Property 'retryAfterSeconds' must be present")
+        assertFalse(properties.has("code"), "Property 'code' should not be present")
+        assertFalse(properties.has("errors"), "Property 'errors' should not be present")
 
-        // 2. 'code' and 'message' are required; default-valued fields are optional
+        // 2. 'error' and 'message' are required; default-valued fields are optional
         val requiredNode = schemaNode.path("required")
         assertTrue(!requiredNode.isMissingNode && requiredNode.isArray, "'required' array must be present in schema")
         val requiredFields = requiredNode.map { it.asText() }
-        assertTrue(requiredFields.contains("code"), "'code' must be in required list")
+        assertTrue(requiredFields.contains("error"), "'error' must be in required list")
         assertTrue(requiredFields.contains("message"), "'message' must be in required list")
-        assertFalse(requiredFields.contains("errors"), "'errors' should not be required")
         assertFalse(requiredFields.contains("fieldErrors"), "'fieldErrors' should not be required")
         assertFalse(requiredFields.contains("retryAfterSeconds"), "'retryAfterSeconds' should not be required")
 
@@ -144,9 +144,7 @@ class OpenApiExportTest {
         )
 
         // 4. Schema property types match contract
-        assertEquals("string", properties.path("code").path("type").asText())
-        assertEquals("array", properties.path("errors").path("type").asText())
-        assertEquals("string", properties.path("errors").path("items").path("type").asText())
+        assertEquals("object", properties.path("error").path("type").asText())
         assertEquals("object", properties.path("fieldErrors").path("type").asText())
         assertEquals("string", properties.path("fieldErrors").path("additionalProperties").path("type").asText())
         assertEquals("integer", properties.path("retryAfterSeconds").path("type").asText())

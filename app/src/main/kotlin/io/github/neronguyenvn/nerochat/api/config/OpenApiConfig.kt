@@ -3,6 +3,7 @@ package io.github.neronguyenvn.nerochat.api.config
 import io.github.neronguyenvn.nerochat.api.annotation.ApiErrors
 import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
+import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import io.github.neronguyenvn.nerochat.contract.error.ServerError
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
@@ -41,11 +42,6 @@ class OpenApiConfig {
             val instance = clazz.objectInstance
             if (instance != null) return listOf(instance)
 
-            val authMatches = AuthServerError.entries.filter { clazz.java.isAssignableFrom(it::class.java) }
-            val chatMatches = ChatServerError.entries.filter { clazz.java.isAssignableFrom(it::class.java) }
-            val combined = (authMatches + chatMatches).distinct()
-            if (combined.isNotEmpty()) return combined
-
             if (clazz.isSealed) {
                 return clazz.sealedSubclasses.flatMap { resolveServerErrors(it) }.distinct()
             }
@@ -78,13 +74,11 @@ class OpenApiConfig {
             is ChatServerError.InvalidPayload -> HttpStatus.BAD_REQUEST
             is ChatServerError.MessageSendFailed -> HttpStatus.INTERNAL_SERVER_ERROR
 
-            else -> when (error.code) {
-                ServerError.BAD_REQUEST, ServerError.VALIDATION_FAILED -> HttpStatus.BAD_REQUEST
-                ServerError.UNAUTHORIZED -> HttpStatus.UNAUTHORIZED
-                ServerError.FORBIDDEN -> HttpStatus.FORBIDDEN
-                ServerError.INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR
-                else -> HttpStatus.BAD_REQUEST
-            }
+            is CommonServerError.BadRequest, is CommonServerError.ValidationFailed -> HttpStatus.BAD_REQUEST
+            is CommonServerError.Unauthorized -> HttpStatus.UNAUTHORIZED
+            is CommonServerError.Forbidden -> HttpStatus.FORBIDDEN
+            is CommonServerError.InternalServerError -> HttpStatus.INTERNAL_SERVER_ERROR
+            else -> HttpStatus.BAD_REQUEST
         }
     }
 
@@ -131,7 +125,7 @@ class OpenApiConfig {
 
         for ((status, errors) in groupedByStatus) {
             val statusCode = status.value().toString()
-            val errorCodes = errors.map { it.code }.distinct()
+            val errorCodes = errors.map { it::class.simpleName ?: it.toString() }.distinct()
             val codesFormatted = errorCodes.joinToString(", ") { "`$it`" }
             val description = "${status.reasonPhrase}. Contract error codes: $codesFormatted"
 
@@ -177,24 +171,18 @@ class OpenApiConfig {
         val schema = ObjectSchema().apply {
             name = API_ERROR_RESPONSE_SCHEMA
             description = "Standardized error response payload returned on all API error conditions"
-            required = listOf("code", "message")
+            required = listOf("error", "message")
             addProperty(
-                "code",
-                StringSchema()
-                    .description("Contract error code identifying the exact error condition")
-                    .example("VALIDATION_FAILED")
+                "error",
+                ObjectSchema()
+                    .description("Contract error object or discriminator identifying the exact error condition")
+                    .example("ValidationFailed")
             )
             addProperty(
                 "message",
                 StringSchema()
                     .description("Human-readable error description")
                     .example("Validation failed")
-            )
-            addProperty(
-                "errors",
-                ArraySchema()
-                    .items(StringSchema())
-                    .description("List of error messages")
             )
             addProperty(
                 "fieldErrors",

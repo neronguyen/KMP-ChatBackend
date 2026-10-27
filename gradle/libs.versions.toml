@@ -5,7 +5,7 @@ kotlinx-datetime = "0.8.0"
 spring-boot = "4.0.6"
 jwt = "0.12.6"
 redission = "4.5.0"
-contract = "0.1.0"
+contract = "0.2.0"
 springdoc = "3.1.1"
 
 [libraries]
@@ -36,12 +36,12 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 # Contracts
-contract-core = { module = "io.github.neronguyenvn.nerochat.contract:contract-core", version.ref = "contract" }
-contract-auth = { module = "io.github.neronguyenvn.nerochat.contract:contract-auth", version.ref = "contract" }
-contract-chat = { module = "io.github.neronguyenvn.nerochat.contract:contract-chat", version.ref = "contract" }
-validation-core = { module = "io.github.neronguyenvn.nerochat.contract:validation-core", version.ref = "contract" }
-validation-auth = { module = "io.github.neronguyenvn.nerochat.contract:validation-auth", version.ref = "contract" }
-validation-chat = { module = "io.github.neronguyenvn.nerochat.contract:validation-chat", version.ref = "contract" }
+contract-common = { module = "io.github.neronguyenvn.nerochat.contract:common", version.ref = "contract" }
+contract-auth = { module = "io.github.neronguyenvn.nerochat.contract:auth", version.ref = "contract" }
+contract-chat = { module = "io.github.neronguyenvn.nerochat.contract:chat", version.ref = "contract" }
+validation-common = { module = "io.github.neronguyenvn.nerochat.validation:common", version.ref = "contract" }
+validation-auth = { module = "io.github.neronguyenvn.nerochat.validation:auth", version.ref = "contract" }
+validation-chat = { module = "io.github.neronguyenvn.nerochat.validation:chat", version.ref = "contract" }
 
 # Redisson
 redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-starter", version.ref = "redission" }

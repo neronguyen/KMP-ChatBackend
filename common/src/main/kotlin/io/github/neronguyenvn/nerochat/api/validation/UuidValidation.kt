@@ -1,6 +1,6 @@
 package io.github.neronguyenvn.nerochat.api.validation
 
-import io.github.neronguyenvn.nerochat.contract.validation.ValidationPatterns
+import io.github.neronguyenvn.nerochat.contract.validation.UuidValidator
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -17,12 +17,12 @@ class InvalidUuidException(
 }
 
 /**
- * Validates that [value] conforms to canonical 8-4-4-4-12 UUID format via [ValidationPatterns.isValidUuid].
+ * Validates that [value] conforms to canonical 8-4-4-4-12 UUID format via [UuidValidator.isValidUuid].
  *
  * @throws InvalidUuidException if [value] is not a valid UUID string.
  */
 fun requireValidUuid(parameterName: String, value: String) {
-    if (!ValidationPatterns.isValidUuid(value)) {
+    if (!UuidValidator.isValidUuid(value)) {
         throw InvalidUuidException(parameterName = parameterName, invalidValue = value)
     }
 }

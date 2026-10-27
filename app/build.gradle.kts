@@ -10,7 +10,7 @@ dependencies {
     implementation(projects.chat)
     implementation(projects.notification)
 
-    implementation(libs.contract.core)
+    implementation(libs.contract.common)
     implementation(libs.contract.auth)
     implementation(libs.contract.chat)
 

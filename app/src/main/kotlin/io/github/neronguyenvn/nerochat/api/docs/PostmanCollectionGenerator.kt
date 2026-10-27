@@ -285,11 +285,10 @@ object PostmanCollectionGenerator {
         }
 
         val errorPayload = linkedMapOf<String, Any?>(
-            "code" to errorCode,
+            "error" to errorCode,
             "message" to getErrorMessageForCode(errorCode)
         )
         if (errorCode == "VALIDATION_FAILED") {
-            errorPayload["errors"] = listOf("Email must not be blank")
             errorPayload["fieldErrors"] = mapOf("email" to "Email must not be blank")
         } else if (errorCode == "RATE_LIMIT_EXCEEDED") {
             errorPayload["retryAfterSeconds"] = 60

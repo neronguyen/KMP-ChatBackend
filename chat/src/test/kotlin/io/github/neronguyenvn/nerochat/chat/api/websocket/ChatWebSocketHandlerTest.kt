@@ -9,6 +9,7 @@ import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.contract.chat.WsClientMessage
 import io.github.neronguyenvn.nerochat.contract.chat.WsServerEvent
+import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -140,7 +141,7 @@ class ChatWebSocketHandlerTest {
 
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
-        assertEquals("INVALID_JSON", (event as WsServerEvent.Error).code)
+        assertEquals(ChatServerError.InvalidJson, (event as WsServerEvent.Error).error)
     }
 
     @Test
@@ -171,7 +172,7 @@ class ChatWebSocketHandlerTest {
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
         val errorEvent = event as WsServerEvent.Error
-        assertEquals("DUPLICATE_MESSAGE_ID", errorEvent.code)
+        assertEquals(ChatServerError.DuplicateMessageId, errorEvent.error)
         assertEquals("Message with ID $conflictingMessageId already exists", errorEvent.message)
         assertEquals(roomId.value, errorEvent.roomId)
         assertEquals(conflictingMessageId.value, errorEvent.messageId)
@@ -204,6 +205,6 @@ class ChatWebSocketHandlerTest {
 
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
-        assertEquals("MESSAGE_SEND_FAILED", (event as WsServerEvent.Error).code)
+        assertEquals(ChatServerError.MessageSendFailed, (event as WsServerEvent.Error).error)
     }
 }
