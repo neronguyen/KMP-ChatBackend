@@ -2,11 +2,12 @@ package io.github.neronguyenvn.nerochat.api.advice
 
 import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
-import io.github.neronguyenvn.nerochat.contract.error.ServerError
+import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.exception.UnauthorizedException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.springframework.beans.TypeMismatchException
 import org.springframework.core.MethodParameter
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -17,7 +18,7 @@ import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
-import org.springframework.web.context.request.ServletWebRequest
+import org.springframework.web.ErrorResponseException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.server.ResponseStatusException
 
@@ -25,30 +26,36 @@ class CommonExceptionHandlerTest {
 
     private val handler = CommonExceptionHandler()
 
-    private fun handleSpringMvcException(ex: Exception): ResponseEntity<Any> {
-        val request = ServletWebRequest(MockHttpServletRequest())
-        return handler.handleException(ex, request) ?: error("Response was null for $ex")
+    private fun handleSpringMvcException(ex: Exception): ResponseEntity<ApiErrorResponse<CommonServerError>> {
+        return when (ex) {
+            is MethodArgumentNotValidException -> handler.onMethodArgumentNotValid(ex)
+            is HttpMessageNotReadableException -> handler.onHttpMessageNotReadable(ex)
+            is MissingServletRequestParameterException -> handler.onMissingServletRequestParameter(ex)
+            is TypeMismatchException -> handler.onTypeMismatch(ex)
+            is ErrorResponseException -> handler.onErrorResponse(ex)
+            else -> handler.onUnhandledException(ex)
+        }
     }
 
     @Test
-    fun `handles UnauthorizedException with 401 status and UNAUTHORIZED code`() {
+    fun `handles UnauthorizedException with 401 status and UNAUTHORIZED error`() {
         val ex = UnauthorizedException("Token has expired")
         val response = handler.onUnauthorized(ex)
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ServerError.UNAUTHORIZED, response.body?.code)
+        assertEquals(CommonServerError.Unauthorized, response.body?.error)
         assertEquals("Token has expired", response.body?.message)
     }
 
     @Test
-    fun `handles ForbiddenException with 403 status and FORBIDDEN code`() {
+    fun `handles ForbiddenException with 403 status and FORBIDDEN error`() {
         val ex = ForbiddenException()
         val response = handler.onForbidden(ex)
 
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ServerError.FORBIDDEN, response.body?.code)
+        assertEquals(CommonServerError.Forbidden, response.body?.error)
         assertEquals("You are not allowed to do that", response.body?.message)
     }
 
@@ -59,13 +66,13 @@ class CommonExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ServerError.BAD_REQUEST, response.body?.code)
+        assertEquals(CommonServerError.BadRequest, response.body?.error)
         assertEquals("Parameter 'roomId' must be a valid UUID", response.body?.message)
         assertFalse(response.body?.message?.contains("not-a-valid-uuid") == true)
     }
 
     @Test
-    fun `handles MethodArgumentNotValidException with 400 status and VALIDATION_FAILED code`() {
+    fun `handles MethodArgumentNotValidException with 400 status and VALIDATION_FAILED error`() {
         val method = javaClass.getDeclaredMethod("dummyMethod", String::class.java)
         val parameter = MethodParameter(method, 0)
         val bindingResult = BeanPropertyBindingResult("dummyTarget", "target")
@@ -76,11 +83,10 @@ class CommonExceptionHandlerTest {
         val response = handleSpringMvcException(ex)
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        val body = response.body as? ApiErrorResponse
+        val body = response.body as? ApiErrorResponse<CommonServerError>
         assertNotNull(body)
-        assertEquals(ServerError.VALIDATION_FAILED, body?.code)
+        assertEquals(CommonServerError.ValidationFailed, body?.error)
         assertEquals("Email format is invalid", body?.message)
-        assertEquals(listOf("Email format is invalid", "Password cannot be blank"), body?.errors)
         assertEquals("Email format is invalid", body?.fieldErrors?.get("email"))
         assertEquals("Password cannot be blank", body?.fieldErrors?.get("password"))
     }
@@ -90,7 +96,7 @@ class CommonExceptionHandlerTest {
     }
 
     @Test
-    fun `handles HttpMessageNotReadableException with 400 status and BAD_REQUEST code`() {
+    fun `handles HttpMessageNotReadableException with 400 status and BAD_REQUEST error`() {
         val ex = HttpMessageNotReadableException(
             "JSON parse error",
             MockHttpInputMessage(ByteArray(0))
@@ -98,11 +104,10 @@ class CommonExceptionHandlerTest {
         val response = handleSpringMvcException(ex)
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        val body = response.body as? ApiErrorResponse
+        val body = response.body as? ApiErrorResponse<CommonServerError>
         assertNotNull(body)
-        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals(CommonServerError.BadRequest, body?.error)
         assertEquals("Malformed request body", body?.message)
-        assertTrue(body?.errors?.isEmpty() == true)
         assertTrue(body?.fieldErrors?.isEmpty() == true)
     }
 
@@ -112,9 +117,9 @@ class CommonExceptionHandlerTest {
         val response = handleSpringMvcException(ex)
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        val body = response.body as? ApiErrorResponse
+        val body = response.body as? ApiErrorResponse<CommonServerError>
         assertNotNull(body)
-        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals(CommonServerError.BadRequest, body?.error)
         assertEquals("Missing required parameter: 'query'", body?.message)
     }
 
@@ -126,9 +131,9 @@ class CommonExceptionHandlerTest {
         val response = handleSpringMvcException(ex)
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        val body = response.body as? ApiErrorResponse
+        val body = response.body as? ApiErrorResponse<CommonServerError>
         assertNotNull(body)
-        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals(CommonServerError.BadRequest, body?.error)
         assertEquals("Invalid parameter: 'filterId'", body?.message)
         assertFalse(body?.message?.contains("raw-value") == true)
     }
@@ -139,9 +144,9 @@ class CommonExceptionHandlerTest {
         val response = handleSpringMvcException(ex)
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
-        val body = response.body as? ApiErrorResponse
+        val body = response.body as? ApiErrorResponse<CommonServerError>
         assertNotNull(body)
-        assertEquals(ServerError.BAD_REQUEST, body?.code)
+        assertEquals(CommonServerError.BadRequest, body?.error)
         assertEquals("Resource not found", body?.message)
     }
 
@@ -151,9 +156,9 @@ class CommonExceptionHandlerTest {
         val response = handleSpringMvcException(ex)
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
-        val body = response.body as? ApiErrorResponse
+        val body = response.body as? ApiErrorResponse<CommonServerError>
         assertNotNull(body)
-        assertEquals(ServerError.INTERNAL_SERVER_ERROR, body?.code)
+        assertEquals(CommonServerError.InternalServerError, body?.error)
         assertEquals("An unexpected error occurred", body?.message)
     }
 
@@ -164,7 +169,7 @@ class CommonExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ServerError.INTERNAL_SERVER_ERROR, response.body?.code)
+        assertEquals(CommonServerError.InternalServerError, response.body?.error)
         assertEquals("An unexpected error occurred", response.body?.message)
     }
 
@@ -175,7 +180,7 @@ class CommonExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ServerError.INTERNAL_SERVER_ERROR, response.body?.code)
+        assertEquals(CommonServerError.InternalServerError, response.body?.error)
         assertEquals("An unexpected error occurred", response.body?.message)
     }
 }

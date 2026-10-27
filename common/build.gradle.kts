@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api(libs.contract.core)
+    api(libs.contract.common)
     api(libs.swagger.annotations.jakarta)
     implementation(libs.jwt.api)
     runtimeOnly(libs.jwt.impl)

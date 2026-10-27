@@ -15,46 +15,46 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 class ChatExceptionHandler {
 
     @ExceptionHandler(ChatRoomNotFoundException::class)
-    fun onChatRoomNotFound(e: ChatRoomNotFoundException): ResponseEntity<ApiErrorResponse> =
+    fun onChatRoomNotFound(e: ChatRoomNotFoundException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
             ApiErrorResponse(
-                code = ChatServerError.ChatRoomNotFound.code,
+                error = ChatServerError.ChatRoomNotFound,
                 message = e.message ?: "Chat room not found",
             )
         )
 
     @ExceptionHandler(ChatParticipantNotFoundException::class)
-    fun onChatParticipantNotFound(e: ChatParticipantNotFoundException): ResponseEntity<ApiErrorResponse> =
+    fun onChatParticipantNotFound(e: ChatParticipantNotFoundException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
             ApiErrorResponse(
-                code = ChatServerError.ChatParticipantNotFound.code,
+                error = ChatServerError.ChatParticipantNotFound,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(MessageNotFoundException::class)
-    fun onMessageNotFound(e: MessageNotFoundException): ResponseEntity<ApiErrorResponse> =
+    fun onMessageNotFound(e: MessageNotFoundException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
             ApiErrorResponse(
-                code = ChatServerError.MessageNotFound.code,
+                error = ChatServerError.MessageNotFound,
                 message = e.message ?: "Message not found",
             )
         )
 
     @ExceptionHandler(InvalidChatRoomSizeException::class)
-    fun onInvalidChatRoomSize(e: InvalidChatRoomSizeException): ResponseEntity<ApiErrorResponse> =
+    fun onInvalidChatRoomSize(e: InvalidChatRoomSizeException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
             ApiErrorResponse(
-                code = ChatServerError.InvalidChatRoomSize.code,
+                error = ChatServerError.InvalidChatRoomSize,
                 message = e.message ?: "Invalid chat room size",
             )
         )
 
     @ExceptionHandler(ParticipantAlreadyInRoomException::class)
-    fun onParticipantAlreadyInRoom(e: ParticipantAlreadyInRoomException): ResponseEntity<ApiErrorResponse> =
+    fun onParticipantAlreadyInRoom(e: ParticipantAlreadyInRoomException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(
             ApiErrorResponse(
-                code = ChatServerError.ParticipantAlreadyInRoom.code,
+                error = ChatServerError.ParticipantAlreadyInRoom,
                 message = e.message ?: "Participant is already in this chat room",
             )
         )

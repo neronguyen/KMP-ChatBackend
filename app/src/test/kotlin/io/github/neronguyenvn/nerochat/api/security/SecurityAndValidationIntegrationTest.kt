@@ -12,7 +12,7 @@ import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatParticipantService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
-import io.github.neronguyenvn.nerochat.contract.error.ServerError
+import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.service.JwtService
 import io.github.neronguyenvn.nerochat.user.api.advice.AuthExceptionHandler
@@ -126,9 +126,9 @@ class SecurityAndValidationIntegrationTest {
             .andReturn()
 
         val responseBody = result.response.contentAsString
-        val apiError = json.decodeFromString<ApiErrorResponse>(responseBody)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(responseBody)
 
-        assertEquals(ServerError.UNAUTHORIZED, apiError.code)
+        assertEquals(CommonServerError.Unauthorized, apiError.error)
         assertEquals("Authentication required", apiError.message)
     }
 
@@ -143,8 +143,8 @@ class SecurityAndValidationIntegrationTest {
         assertEquals(403, response.status)
         assertEquals(MediaType.APPLICATION_JSON_VALUE, response.contentType)
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(response.contentAsString)
-        assertEquals(ServerError.FORBIDDEN, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(response.contentAsString)
+        assertEquals(CommonServerError.Forbidden, apiError.error)
         assertEquals("Access denied", apiError.message)
     }
 
@@ -168,11 +168,10 @@ class SecurityAndValidationIntegrationTest {
             .andReturn()
 
         val responseBody = result.response.contentAsString
-        val apiError = json.decodeFromString<ApiErrorResponse>(responseBody)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(responseBody)
 
-        assertEquals(ServerError.VALIDATION_FAILED, apiError.code)
+        assertEquals(CommonServerError.ValidationFailed, apiError.error)
         assertNotNull(apiError.message)
-        assertTrue(apiError.errors.isNotEmpty(), "errors list should not be empty")
         assertTrue(apiError.fieldErrors.containsKey("email"), "fieldErrors should contain 'email'")
         assertTrue(apiError.fieldErrors.containsKey("displayName"), "fieldErrors should contain 'displayName'")
         assertTrue(apiError.fieldErrors.containsKey("password"), "fieldErrors should contain 'password'")
@@ -192,9 +191,9 @@ class SecurityAndValidationIntegrationTest {
             .andReturn()
 
         val responseBody = result.response.contentAsString
-        val apiError = json.decodeFromString<ApiErrorResponse>(responseBody)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(responseBody)
 
-        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        assertEquals(CommonServerError.BadRequest, apiError.error)
         assertEquals("Malformed request body", apiError.message)
     }
 
@@ -208,8 +207,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.BadRequest, apiError.error)
         assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
         verifyNoInteractions(chatRoomService, chatMessageService)
     }
@@ -224,8 +223,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.BadRequest, apiError.error)
         assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
         verifyNoInteractions(chatRoomService, chatMessageService)
     }
@@ -240,8 +239,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.BadRequest, apiError.error)
         assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
         verifyNoInteractions(chatRoomService, chatMessageService)
     }
@@ -260,8 +259,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.BadRequest, apiError.error)
         assertEquals("Parameter 'roomId' must be a valid UUID", apiError.message)
         verifyNoInteractions(chatRoomService, chatMessageService)
     }
@@ -276,8 +275,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.BAD_REQUEST, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.BadRequest, apiError.error)
         assertEquals("Parameter 'messageId' must be a valid UUID", apiError.message)
         verifyNoInteractions(chatRoomService, chatMessageService)
     }
@@ -301,8 +300,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.VALIDATION_FAILED, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.ValidationFailed, apiError.error)
         assertEquals("Target user ID must be a valid UUID", apiError.message)
         assertEquals("Target user ID must be a valid UUID", apiError.fieldErrors["targetUserId"])
         verifyNoInteractions(chatRoomService, chatMessageService)
@@ -327,8 +326,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.VALIDATION_FAILED, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.ValidationFailed, apiError.error)
         assertEquals("Participant ID must be a valid UUID", apiError.message)
         assertEquals("Participant ID must be a valid UUID", apiError.fieldErrors["participantIds"])
         verifyNoInteractions(chatRoomService, chatMessageService)
@@ -353,8 +352,8 @@ class SecurityAndValidationIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn()
 
-        val apiError = json.decodeFromString<ApiErrorResponse>(result.response.contentAsString)
-        assertEquals(ServerError.VALIDATION_FAILED, apiError.code)
+        val apiError = json.decodeFromString<ApiErrorResponse<CommonServerError>>(result.response.contentAsString)
+        assertEquals(CommonServerError.ValidationFailed, apiError.error)
         assertEquals("Participant ID must be a valid UUID", apiError.message)
         assertEquals("Participant ID must be a valid UUID", apiError.fieldErrors["userIds"])
         verifyNoInteractions(chatRoomService, chatMessageService)

@@ -173,14 +173,14 @@ class ChatWebSocketHandler(
         } catch (e: SerializationException) {
             logger.warn("Payload decode error from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = ChatServerError.InvalidJson.code,
+                error = ChatServerError.InvalidJson,
                 message = "Malformed payload"
             )
             return
         } catch (e: IllegalArgumentException) {
             logger.warn("Payload decode error from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = ChatServerError.InvalidJson.code,
+                error = ChatServerError.InvalidJson,
                 message = "Malformed payload"
             )
             return
@@ -198,13 +198,13 @@ class ChatWebSocketHandler(
         } catch (e: IllegalArgumentException) {
             logger.warn("Invalid message parameters from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = ChatServerError.InvalidPayload.code,
+                error = ChatServerError.InvalidPayload,
                 message = "Invalid message parameters"
             )
         } catch (e: DuplicateMessageIdException) {
             logger.warn("Duplicate message ID from session ${session.id}: ${e.message}")
             userSession.sendError(
-                code = ChatServerError.DuplicateMessageId.code,
+                error = ChatServerError.DuplicateMessageId,
                 message = e.message ?: "Duplicate message ID",
                 roomId = (incoming as? WsClientMessage.NewMessage)?.roomId,
                 messageId = (incoming as? WsClientMessage.NewMessage)?.messageId
@@ -212,7 +212,7 @@ class ChatWebSocketHandler(
         } catch (e: Exception) {
             logger.error("Failed to handle WebSocket message from session ${session.id}", e)
             userSession.sendError(
-                code = ChatServerError.MessageSendFailed.code,
+                error = ChatServerError.MessageSendFailed,
                 message = "Failed to send message",
                 roomId = (incoming as? WsClientMessage.NewMessage)?.roomId,
                 messageId = (incoming as? WsClientMessage.NewMessage)?.messageId
@@ -221,13 +221,13 @@ class ChatWebSocketHandler(
     }
 
     private fun UserSession.sendError(
-        code: String,
+        error: ChatServerError.WebSocket,
         message: String,
         roomId: String? = null,
         messageId: String? = null,
     ) {
         val event: WsServerEvent = WsServerEvent.Error(
-            code = code,
+            error = error,
             message = message,
             roomId = roomId,
             messageId = messageId,
@@ -245,7 +245,7 @@ class ChatWebSocketHandler(
         val allowedChatRooms = roomIdsByUserId[senderId]
         if (allowedChatRooms == null || roomId !in allowedChatRooms) {
             userSession.sendError(
-                code = ChatServerError.ChatRoomNotFound.code,
+                error = ChatServerError.ChatRoomNotFound,
                 message = "Chat room not found or access denied",
                 roomId = incoming.roomId,
                 messageId = incoming.messageId

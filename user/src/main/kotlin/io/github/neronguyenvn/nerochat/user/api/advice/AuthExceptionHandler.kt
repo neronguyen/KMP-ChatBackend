@@ -23,75 +23,75 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 class AuthExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException::class)
-    fun onInvalidToken(e: InvalidTokenException): ResponseEntity<ApiErrorResponse> =
+    fun onInvalidToken(e: InvalidTokenException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             ApiErrorResponse(
-                code = AuthServerError.InvalidToken.code,
+                error = AuthServerError.InvalidToken,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(UserNotFoundException::class)
-    fun onUserNotFound(e: UserNotFoundException): ResponseEntity<ApiErrorResponse> =
+    fun onUserNotFound(e: UserNotFoundException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
             ApiErrorResponse(
-                code = AuthServerError.UserNotFound.code,
+                error = AuthServerError.UserNotFound,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(WrongPasswordException::class)
-    fun onPasswordMismatch(e: WrongPasswordException): ResponseEntity<ApiErrorResponse> =
+    fun onPasswordMismatch(e: WrongPasswordException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             ApiErrorResponse(
-                code = AuthServerError.WrongPassword.code,
+                error = AuthServerError.WrongPassword,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(EmailNotVerifiedException::class)
-    fun onEmailNotVerified(e: EmailNotVerifiedException): ResponseEntity<ApiErrorResponse> =
+    fun onEmailNotVerified(e: EmailNotVerifiedException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(
             ApiErrorResponse(
-                code = AuthServerError.EmailNotVerified.code,
+                error = AuthServerError.EmailNotVerified,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(InvalidCredentialsException::class)
-    fun onInvalidCredentials(e: InvalidCredentialsException): ResponseEntity<ApiErrorResponse> =
+    fun onInvalidCredentials(e: InvalidCredentialsException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             ApiErrorResponse(
-                code = AuthServerError.InvalidCredentials.code,
+                error = AuthServerError.InvalidCredentials,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(SamePasswordException::class)
-    fun onSamePassword(e: SamePasswordException): ResponseEntity<ApiErrorResponse> =
+    fun onSamePassword(e: SamePasswordException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(
             ApiErrorResponse(
-                code = AuthServerError.SamePassword.code,
+                error = AuthServerError.SamePassword,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(UserAlreadyExistsException::class)
-    fun onUserAlreadyExists(e: UserAlreadyExistsException): ResponseEntity<ApiErrorResponse> =
+    fun onUserAlreadyExists(e: UserAlreadyExistsException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(
             ApiErrorResponse(
-                code = AuthServerError.UserAlreadyExists.code,
+                error = AuthServerError.UserAlreadyExists,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(RateLimitExceededException::class)
-    fun onRateLimitExceeded(e: RateLimitExceededException): ResponseEntity<ApiErrorResponse> =
+    fun onRateLimitExceeded(e: RateLimitExceededException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
         ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
             .header(HttpHeaders.RETRY_AFTER, e.resetsInSeconds.toString())
             .body(
                 ApiErrorResponse(
-                    code = AuthServerError.RateLimitExceeded.code,
+                    error = AuthServerError.RateLimitExceeded,
                     message = e.message,
                     retryAfterSeconds = e.resetsInSeconds,
                 )

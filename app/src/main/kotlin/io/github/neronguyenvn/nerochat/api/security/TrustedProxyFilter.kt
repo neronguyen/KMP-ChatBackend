@@ -2,7 +2,7 @@ package io.github.neronguyenvn.nerochat.api.security
 
 import io.github.neronguyenvn.nerochat.api.config.TrustedProxyConfig
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
-import io.github.neronguyenvn.nerochat.contract.error.ServerError
+import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletRequestWrapper
@@ -43,8 +43,8 @@ class TrustedProxyFilter(
         if (!isTrusted && config.requireProxy) {
             response.status = HttpServletResponse.SC_FORBIDDEN
             response.contentType = MediaType.APPLICATION_JSON_VALUE
-            val errorResponse = ApiErrorResponse(
-                code = ServerError.FORBIDDEN,
+            val errorResponse: ApiErrorResponse<CommonServerError> = ApiErrorResponse(
+                error = CommonServerError.Forbidden,
                 message = "Direct connections not allowed"
             )
             response.writer.write(json.encodeToString(errorResponse))
