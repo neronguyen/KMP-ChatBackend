@@ -3,12 +3,13 @@ package io.github.neronguyenvn.nerochat.api.advice
 import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
-import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
+import io.github.neronguyenvn.nerochat.domain.exception.RateLimitExceededException
 import io.github.neronguyenvn.nerochat.domain.exception.UnauthorizedException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.TypeMismatchException
 import org.springframework.core.MethodParameter
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -49,14 +50,17 @@ class CommonExceptionHandlerTest {
     }
 
     @Test
-    fun `handles ForbiddenException with 403 status and FORBIDDEN error`() {
-        val ex = ForbiddenException()
-        val response = handler.onForbidden(ex)
+    fun `handles RateLimitExceededException with 429 status and RATE_LIMIT_EXCEEDED error`() {
+        val resetsInSeconds = 45L
+        val ex = RateLimitExceededException(resetsInSeconds)
+        val response = handler.onRateLimitExceeded(ex)
 
-        assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.statusCode)
+        assertEquals(resetsInSeconds.toString(), response.headers.getFirst(HttpHeaders.RETRY_AFTER))
         assertNotNull(response.body)
-        assertEquals(CommonServerError.Forbidden, response.body?.error)
-        assertEquals("You are not allowed to do that", response.body?.message)
+        assertEquals(CommonServerError.RateLimitExceeded, response.body?.error)
+        assertEquals(ex.message, response.body?.message)
+        assertEquals(resetsInSeconds, response.body?.retryAfterSeconds)
     }
 
     @Test

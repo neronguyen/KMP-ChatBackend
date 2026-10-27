@@ -58,4 +58,22 @@ class ChatExceptionHandler {
                 message = e.message ?: "Participant is already in this chat room",
             )
         )
+
+    @ExceptionHandler(ParticipantNotInRoomException::class)
+    fun onParticipantNotInRoom(e: ParticipantNotInRoomException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+        ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+            ApiErrorResponse(
+                error = ChatServerError.ParticipantNotInRoom,
+                message = e.message,
+            )
+        )
+
+    @ExceptionHandler(NotMessageSenderException::class)
+    fun onNotMessageSender(e: NotMessageSenderException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+        ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+            ApiErrorResponse(
+                error = ChatServerError.NotMessageSender,
+                message = e.message,
+            )
+        )
 }

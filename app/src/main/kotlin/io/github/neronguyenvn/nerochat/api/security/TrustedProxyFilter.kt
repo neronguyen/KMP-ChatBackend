@@ -44,7 +44,7 @@ class TrustedProxyFilter(
             response.status = HttpServletResponse.SC_FORBIDDEN
             response.contentType = MediaType.APPLICATION_JSON_VALUE
             val errorResponse: ApiErrorResponse<CommonServerError> = ApiErrorResponse(
-                error = CommonServerError.Forbidden,
+                error = CommonServerError.Unauthorized,
                 message = "Direct connections not allowed"
             )
             response.writer.write(json.encodeToString(errorResponse))

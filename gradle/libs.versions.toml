@@ -5,7 +5,7 @@ kotlinx-datetime = "0.8.0"
 spring-boot = "4.0.6"
 jwt = "0.12.6"
 redission = "4.5.0"
-contract = "0.2.0"
+contract = "0.3.1"
 springdoc = "3.1.1"
 
 [libraries]

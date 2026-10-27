@@ -5,6 +5,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotF
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatParticipantEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
@@ -13,7 +14,6 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessag
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
-import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,6 +23,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentCaptor
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -386,7 +388,7 @@ class ChatRoomServiceTest {
     }
 
     @Test
-    fun `addParticipantsToChatRoom throws ForbiddenException when chatRoom type is DIRECT`() {
+    fun `addParticipantsToChatRoom throws ResponseStatusException when chatRoom type is DIRECT`() {
         val roomId = ChatRoomId(UUID.randomUUID())
         val roomEntity = ChatRoomEntity(
             id = roomId.asUUID(),
@@ -397,7 +399,7 @@ class ChatRoomServiceTest {
         )
         `when`(chatRoomRepository.findById(roomId.asUUID())).thenReturn(Optional.of(roomEntity))
 
-        assertThrows<ForbiddenException> {
+        val ex = assertThrows<ResponseStatusException> {
             chatRoomService.addParticipantsToChatRoom(
                 roomId = roomId,
                 requesterId = creatorId,
@@ -405,6 +407,7 @@ class ChatRoomServiceTest {
             )
         }
 
+        assertEquals(HttpStatus.BAD_REQUEST, ex.statusCode)
         verify(chatRoomRepository, never()).save(any())
     }
 
@@ -445,7 +448,7 @@ class ChatRoomServiceTest {
     }
 
     @Test
-    fun `addParticipantsToChatRoom throws ForbiddenException when requester is not in chat room`() {
+    fun `addParticipantsToChatRoom throws ParticipantNotInRoomException when requester is not in chat room`() {
         val roomId = ChatRoomId(UUID.randomUUID())
         val roomEntity = ChatRoomEntity(
             id = roomId.asUUID(),
@@ -457,7 +460,7 @@ class ChatRoomServiceTest {
         )
         `when`(chatRoomRepository.findById(roomId.asUUID())).thenReturn(Optional.of(roomEntity))
 
-        assertThrows<ForbiddenException> {
+        assertThrows<ParticipantNotInRoomException> {
             chatRoomService.addParticipantsToChatRoom(
                 roomId = roomId,
                 requesterId = user3Id,

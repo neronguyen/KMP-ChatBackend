@@ -1,6 +1,6 @@
 package io.github.neronguyenvn.nerochat.user.service.ratelimiting
 
-import io.github.neronguyenvn.nerochat.user.domain.exception.RateLimitExceededException
+import io.github.neronguyenvn.nerochat.domain.exception.RateLimitExceededException
 import org.redisson.api.RedissonClient
 import org.springframework.stereotype.Service
 import java.time.Duration

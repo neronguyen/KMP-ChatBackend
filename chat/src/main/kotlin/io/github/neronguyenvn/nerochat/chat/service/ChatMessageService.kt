@@ -6,6 +6,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotF
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.MessageNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.NotMessageSenderException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.asExternalModel
@@ -14,7 +15,6 @@ import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatPartic
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
 import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.domain.event.ChatEvent
-import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -104,7 +104,7 @@ class ChatMessageService(
             ?: throw MessageNotFoundException(messageId)
 
         if (requesterId != UserId(message.sender.userId)) {
-            throw ForbiddenException()
+            throw NotMessageSenderException()
         }
 
         chatMessageRepository.delete(message)

@@ -3,12 +3,13 @@ package io.github.neronguyenvn.nerochat.api.advice
 import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
-import io.github.neronguyenvn.nerochat.domain.exception.ForbiddenException
+import io.github.neronguyenvn.nerochat.domain.exception.RateLimitExceededException
 import io.github.neronguyenvn.nerochat.domain.exception.UnauthorizedException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.TypeMismatchException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -36,14 +37,20 @@ class CommonExceptionHandler {
     @ExceptionHandler(UnauthorizedException::class)
     fun onUnauthorized(e: UnauthorizedException): ResponseEntity<ApiErrorResponse<CommonServerError>> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            ApiErrorResponse(error = CommonServerError.Unauthorized, message = e.message ?: "Authentication required")
+            ApiErrorResponse(error = CommonServerError.Unauthorized, message = e.message)
         )
 
-    @ExceptionHandler(ForbiddenException::class)
-    fun onForbidden(e: ForbiddenException): ResponseEntity<ApiErrorResponse<CommonServerError>> =
-        ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-            ApiErrorResponse(error = CommonServerError.Forbidden, message = e.message ?: "Access denied")
-        )
+    @ExceptionHandler(RateLimitExceededException::class)
+    fun onRateLimitExceeded(e: RateLimitExceededException): ResponseEntity<ApiErrorResponse<CommonServerError>> =
+        ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            .header(HttpHeaders.RETRY_AFTER, e.resetsInSeconds.toString())
+            .body(
+                ApiErrorResponse(
+                    error = CommonServerError.RateLimitExceeded,
+                    message = e.message,
+                    retryAfterSeconds = e.resetsInSeconds,
+                )
+            )
 
     @ExceptionHandler(InvalidUuidException::class)
     fun onInvalidUuid(e: InvalidUuidException): ResponseEntity<ApiErrorResponse<CommonServerError>> {
