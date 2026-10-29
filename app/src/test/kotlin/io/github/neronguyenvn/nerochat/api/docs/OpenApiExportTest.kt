@@ -103,7 +103,7 @@ class OpenApiExportTest {
         assertTrue(json.contains("UserAlreadyExists"))
         assertTrue(json.contains("InvalidCredentials"))
         assertTrue(json.contains("ValidationFailed"))
-        assertTrue(json.contains("ApiErrorResponse"))
+        assertTrue(json.contains("ApiErrorDto"))
         assertTrue(json.contains("bearerAuth"))
     }
 
@@ -114,10 +114,10 @@ class OpenApiExportTest {
             .andReturn()
 
         val rootNode = ObjectMapper().readTree(result.response.contentAsString)
-        val schemaNode = rootNode.path("components").path("schemas").path("ApiErrorResponse")
-        assertTrue(!schemaNode.isMissingNode, "ApiErrorResponse schema should be defined under components.schemas")
+        val schemaNode = rootNode.path("components").path("schemas").path("ApiErrorDto")
+        assertTrue(!schemaNode.isMissingNode, "ApiErrorDto schema should be defined under components.schemas")
 
-        // 1. ApiErrorResponse properties present
+        // 1. ApiErrorDto properties present
         val properties = schemaNode.path("properties")
         assertTrue(properties.has("error"), "Property 'error' must be present")
         assertTrue(properties.has("message"), "Property 'message' must be present")

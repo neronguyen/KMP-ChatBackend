@@ -1,7 +1,7 @@
 package io.github.neronguyenvn.nerochat.user.api.advice
 
 import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
-import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
+import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
@@ -21,63 +21,63 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 class AuthExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException::class)
-    fun onInvalidToken(e: InvalidTokenException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
+    fun onInvalidToken(e: InvalidTokenException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = AuthServerError.InvalidToken,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(UserNotFoundException::class)
-    fun onUserNotFound(e: UserNotFoundException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
+    fun onUserNotFound(e: UserNotFoundException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = AuthServerError.UserNotFound,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(WrongPasswordException::class)
-    fun onPasswordMismatch(e: WrongPasswordException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
+    fun onPasswordMismatch(e: WrongPasswordException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = AuthServerError.WrongPassword,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(EmailNotVerifiedException::class)
-    fun onEmailNotVerified(e: EmailNotVerifiedException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
+    fun onEmailNotVerified(e: EmailNotVerifiedException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = AuthServerError.EmailNotVerified,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(InvalidCredentialsException::class)
-    fun onInvalidCredentials(e: InvalidCredentialsException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
+    fun onInvalidCredentials(e: InvalidCredentialsException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = AuthServerError.InvalidCredentials,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(SamePasswordException::class)
-    fun onSamePassword(e: SamePasswordException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
+    fun onSamePassword(e: SamePasswordException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = AuthServerError.SamePassword,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(UserAlreadyExistsException::class)
-    fun onUserAlreadyExists(e: UserAlreadyExistsException): ResponseEntity<ApiErrorResponse<AuthServerError>> =
+    fun onUserAlreadyExists(e: UserAlreadyExistsException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = AuthServerError.UserAlreadyExists,
                 message = e.message,
             )

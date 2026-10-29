@@ -2,7 +2,7 @@ package io.github.neronguyenvn.nerochat.chat.api.advice
 
 import io.github.neronguyenvn.nerochat.chat.domain.exception.*
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
-import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
+import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
@@ -15,63 +15,63 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 class ChatExceptionHandler {
 
     @ExceptionHandler(ChatRoomNotFoundException::class)
-    fun onChatRoomNotFound(e: ChatRoomNotFoundException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+    fun onChatRoomNotFound(e: ChatRoomNotFoundException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = ChatServerError.ChatRoomNotFound,
                 message = e.message ?: "Chat room not found",
             )
         )
 
     @ExceptionHandler(ChatParticipantNotFoundException::class)
-    fun onChatParticipantNotFound(e: ChatParticipantNotFoundException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+    fun onChatParticipantNotFound(e: ChatParticipantNotFoundException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = ChatServerError.ChatParticipantNotFound,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(MessageNotFoundException::class)
-    fun onMessageNotFound(e: MessageNotFoundException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+    fun onMessageNotFound(e: MessageNotFoundException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = ChatServerError.MessageNotFound,
                 message = e.message ?: "Message not found",
             )
         )
 
     @ExceptionHandler(InvalidChatRoomSizeException::class)
-    fun onInvalidChatRoomSize(e: InvalidChatRoomSizeException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+    fun onInvalidChatRoomSize(e: InvalidChatRoomSizeException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = ChatServerError.InvalidChatRoomSize,
                 message = e.message ?: "Invalid chat room size",
             )
         )
 
     @ExceptionHandler(ParticipantAlreadyInRoomException::class)
-    fun onParticipantAlreadyInRoom(e: ParticipantAlreadyInRoomException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+    fun onParticipantAlreadyInRoom(e: ParticipantAlreadyInRoomException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.CONFLICT).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = ChatServerError.ParticipantAlreadyInRoom,
                 message = e.message ?: "Participant is already in this chat room",
             )
         )
 
     @ExceptionHandler(ParticipantNotInRoomException::class)
-    fun onParticipantNotInRoom(e: ParticipantNotInRoomException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+    fun onParticipantNotInRoom(e: ParticipantNotInRoomException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = ChatServerError.ParticipantNotInRoom,
                 message = e.message,
             )
         )
 
     @ExceptionHandler(NotMessageSenderException::class)
-    fun onNotMessageSender(e: NotMessageSenderException): ResponseEntity<ApiErrorResponse<ChatServerError>> =
+    fun onNotMessageSender(e: NotMessageSenderException): ResponseEntity<ApiErrorDto> =
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-            ApiErrorResponse(
+            ApiErrorDto(
                 error = ChatServerError.NotMessageSender,
                 message = e.message,
             )

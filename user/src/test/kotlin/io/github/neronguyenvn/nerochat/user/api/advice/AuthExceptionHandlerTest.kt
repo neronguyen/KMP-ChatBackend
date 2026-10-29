@@ -24,7 +24,7 @@ class AuthExceptionHandlerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(AuthServerError.InvalidToken, response.body?.error)
+        assertEquals(AuthServerError.InvalidToken.code, response.body?.error)
         assertEquals("Token has expired", response.body?.message)
     }
 
@@ -35,7 +35,7 @@ class AuthExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(AuthServerError.UserNotFound, response.body?.error)
+        assertEquals(AuthServerError.UserNotFound.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -46,7 +46,7 @@ class AuthExceptionHandlerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(AuthServerError.WrongPassword, response.body?.error)
+        assertEquals(AuthServerError.WrongPassword.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -57,7 +57,7 @@ class AuthExceptionHandlerTest {
 
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(AuthServerError.EmailNotVerified, response.body?.error)
+        assertEquals(AuthServerError.EmailNotVerified.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -68,7 +68,7 @@ class AuthExceptionHandlerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(AuthServerError.InvalidCredentials, response.body?.error)
+        assertEquals(AuthServerError.InvalidCredentials.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -79,7 +79,7 @@ class AuthExceptionHandlerTest {
 
         assertEquals(HttpStatus.CONFLICT, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(AuthServerError.SamePassword, response.body?.error)
+        assertEquals(AuthServerError.SamePassword.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -90,7 +90,7 @@ class AuthExceptionHandlerTest {
 
         assertEquals(HttpStatus.CONFLICT, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(AuthServerError.UserAlreadyExists, response.body?.error)
+        assertEquals(AuthServerError.UserAlreadyExists.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 }

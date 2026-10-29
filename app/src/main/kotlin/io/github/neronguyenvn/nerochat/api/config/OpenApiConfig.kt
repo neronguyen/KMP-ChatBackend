@@ -36,7 +36,7 @@ class OpenApiConfig {
 
     companion object {
         const val SECURITY_SCHEME_NAME = "bearerAuth"
-        const val API_ERROR_RESPONSE_SCHEMA = "ApiErrorResponse"
+        const val API_ERROR_RESPONSE_SCHEMA = "ApiErrorDto"
 
         fun resolveServerErrors(clazz: KClass<out ServerError>): List<ServerError> {
             val instance = clazz.objectInstance

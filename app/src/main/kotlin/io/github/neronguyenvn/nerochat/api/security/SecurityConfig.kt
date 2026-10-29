@@ -1,6 +1,6 @@
 package io.github.neronguyenvn.nerochat.api.security
 
-import io.github.neronguyenvn.nerochat.contract.error.ApiErrorResponse
+import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import jakarta.servlet.http.HttpServletResponse
 import kotlinx.serialization.json.Json
@@ -69,7 +69,7 @@ class SecurityConfig(
         AuthenticationEntryPoint { _, response, _ ->
             response.status = HttpServletResponse.SC_UNAUTHORIZED
             response.contentType = MediaType.APPLICATION_JSON_VALUE
-            val errorResponse: ApiErrorResponse<CommonServerError> = ApiErrorResponse(
+            val errorResponse = ApiErrorDto(
                 error = CommonServerError.Unauthorized,
                 message = "Authentication required",
             )
@@ -80,7 +80,7 @@ class SecurityConfig(
         AccessDeniedHandler { _, response, _ ->
             response.status = HttpServletResponse.SC_FORBIDDEN
             response.contentType = MediaType.APPLICATION_JSON_VALUE
-            val errorResponse: ApiErrorResponse<CommonServerError> = ApiErrorResponse(
+            val errorResponse = ApiErrorDto(
                 error = CommonServerError.Unauthorized,
                 message = "Access denied",
             )
