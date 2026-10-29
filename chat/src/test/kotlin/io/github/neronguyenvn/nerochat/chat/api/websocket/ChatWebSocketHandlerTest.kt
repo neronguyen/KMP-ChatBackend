@@ -38,7 +38,7 @@ class ChatWebSocketHandlerTest {
     private lateinit var session: WebSocketSession
 
     private val json = Json {
-        classDiscriminator = "type"
+        classDiscriminator = WsServerEvent.CLASS_DISCRIMINATOR
     }
 
     private val userId = UserId(UUID.randomUUID())
@@ -141,7 +141,7 @@ class ChatWebSocketHandlerTest {
 
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
-        assertEquals(ChatServerError.InvalidJson, (event as WsServerEvent.Error).error)
+        assertEquals(ChatServerError.InvalidJson.code, (event as WsServerEvent.Error).error)
     }
 
     @Test
@@ -172,7 +172,7 @@ class ChatWebSocketHandlerTest {
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
         val errorEvent = event as WsServerEvent.Error
-        assertEquals(ChatServerError.DuplicateMessageId, errorEvent.error)
+        assertEquals(ChatServerError.DuplicateMessageId.code, errorEvent.error)
         assertEquals("Message with ID $conflictingMessageId already exists", errorEvent.message)
         assertEquals(roomId.value, errorEvent.roomId)
         assertEquals(conflictingMessageId.value, errorEvent.messageId)
@@ -205,6 +205,6 @@ class ChatWebSocketHandlerTest {
 
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
-        assertEquals(ChatServerError.MessageSendFailed, (event as WsServerEvent.Error).error)
+        assertEquals(ChatServerError.MessageSendFailed.code, (event as WsServerEvent.Error).error)
     }
 }

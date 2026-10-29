@@ -21,7 +21,7 @@ class ChatExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ChatServerError.ChatRoomNotFound, response.body?.error)
+        assertEquals(ChatServerError.ChatRoomNotFound.code, response.body?.error)
         assertEquals("Chat room not found", response.body?.message)
     }
 
@@ -33,7 +33,7 @@ class ChatExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ChatServerError.ChatParticipantNotFound, response.body?.error)
+        assertEquals(ChatServerError.ChatParticipantNotFound.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -45,7 +45,7 @@ class ChatExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ChatServerError.MessageNotFound, response.body?.error)
+        assertEquals(ChatServerError.MessageNotFound.code, response.body?.error)
         assertEquals("Message with ID $messageId not found", response.body?.message)
     }
 
@@ -56,7 +56,7 @@ class ChatExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ChatServerError.InvalidChatRoomSize, response.body?.error)
+        assertEquals(ChatServerError.InvalidChatRoomSize.code, response.body?.error)
         assertEquals("Room requires at least 2 participants", response.body?.message)
     }
 
@@ -68,7 +68,7 @@ class ChatExceptionHandlerTest {
 
         assertEquals(HttpStatus.CONFLICT, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ChatServerError.ParticipantAlreadyInRoom, response.body?.error)
+        assertEquals(ChatServerError.ParticipantAlreadyInRoom.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -79,7 +79,7 @@ class ChatExceptionHandlerTest {
 
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ChatServerError.ParticipantNotInRoom, response.body?.error)
+        assertEquals(ChatServerError.ParticipantNotInRoom.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 
@@ -90,7 +90,7 @@ class ChatExceptionHandlerTest {
 
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(ChatServerError.NotMessageSender, response.body?.error)
+        assertEquals(ChatServerError.NotMessageSender.code, response.body?.error)
         assertEquals(ex.message, response.body?.message)
     }
 }

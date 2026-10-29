@@ -366,9 +366,8 @@ class ChatWebSocketHandler(
         private const val PING_INTERVAL_MS = 30_000L
         private const val PONG_TIMEOUT_MS = 30_000L
 
-        private const val EVENT_TYPE = "type"
         private val defaultJson = Json {
-            classDiscriminator = EVENT_TYPE
+            classDiscriminator = WsServerEvent.CLASS_DISCRIMINATOR
         }
     }
 }
