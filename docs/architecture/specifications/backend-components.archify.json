@@ -1,0 +1,387 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Backend Server Components (C4 Level 3)",
+    "output": "docs/architecture/interactive/c4-backend-components.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "git@github.com:neronguyen/KMP-NeroChatBackend.git",
+      "link_mode": "local-only",
+      "revision": "fbe62fac32064a428d721f72577476ab8a5ce038"
+    }
+  },
+  "components": [
+    {
+      "id": "android_client",
+      "type": "frontend",
+      "label": "Android App",
+      "sublabel": "Mobile Client Container",
+      "tag": "KMP-ChatContract",
+      "pos": [
+        40,
+        230
+      ],
+      "size": [
+        155,
+        66
+      ],
+      "sources": [
+        {
+          "path": "settings.gradle.kts",
+          "line": 34,
+          "end_line": 55
+        }
+      ]
+    },
+    {
+      "id": "security_gateway",
+      "type": "security",
+      "label": "Security & Validation",
+      "sublabel": "JWT Filter · Contract Advice",
+      "tag": ":app · :common",
+      "pos": [
+        350,
+        60
+      ],
+      "size": [
+        160,
+        66
+      ],
+      "sources": [
+        {
+          "path": "app/src/main/kotlin/io/github/neronguyenvn/nerochat/api/security/SecurityConfig.kt",
+          "line": 22,
+          "end_line": 66
+        },
+        {
+          "path": "common/src/main/kotlin/io/github/neronguyenvn/nerochat/api/validation/ContractValidationAdvice.kt",
+          "line": 11,
+          "end_line": 40
+        }
+      ]
+    },
+    {
+      "id": "ws_handler",
+      "type": "backend",
+      "label": "WebSocket Gateway",
+      "sublabel": "JWT Handshake · ChatWebSocketHandler",
+      "tag": ":chat",
+      "pos": [
+        350,
+        230
+      ],
+      "size": [
+        160,
+        66
+      ],
+      "sources": [
+        {
+          "path": "chat/src/main/kotlin/io/github/neronguyenvn/nerochat/chat/api/websocket/WebSocketConfig.kt",
+          "line": 10,
+          "end_line": 18
+        },
+        {
+          "path": "chat/src/main/kotlin/io/github/neronguyenvn/nerochat/chat/api/websocket/ChatWebSocketHandler.kt",
+          "line": 32,
+          "end_line": 80
+        }
+      ]
+    },
+    {
+      "id": "user_module",
+      "type": "backend",
+      "label": "User Service",
+      "sublabel": "Auth · Tokens · Rate Limit",
+      "tag": ":user",
+      "pos": [
+        660,
+        60
+      ],
+      "size": [
+        160,
+        66
+      ],
+      "sources": [
+        {
+          "path": "user/src/main/kotlin/io/github/neronguyenvn/nerochat/user/service/AuthService.kt",
+          "line": 29,
+          "end_line": 76
+        },
+        {
+          "path": "user/src/main/kotlin/io/github/neronguyenvn/nerochat/user/service/ratelimiting/IpRateLimitingService.kt",
+          "line": 9,
+          "end_line": 52
+        }
+      ]
+    },
+    {
+      "id": "chat_module",
+      "type": "backend",
+      "label": "Chat Service",
+      "sublabel": "Rooms · Messages · Events",
+      "tag": ":chat",
+      "pos": [
+        660,
+        230
+      ],
+      "size": [
+        160,
+        66
+      ],
+      "sources": [
+        {
+          "path": "chat/src/main/kotlin/io/github/neronguyenvn/nerochat/chat/service/ChatMessageService.kt",
+          "line": 38,
+          "end_line": 80
+        },
+        {
+          "path": "chat/src/main/kotlin/io/github/neronguyenvn/nerochat/chat/infra/messagequeue/ChatUserEventListener.kt",
+          "line": 10,
+          "end_line": 25
+        }
+      ]
+    },
+    {
+      "id": "notif_module",
+      "type": "backend",
+      "label": "Notification Service",
+      "sublabel": "EmailService · Thymeleaf",
+      "tag": ":notification",
+      "pos": [
+        660,
+        400
+      ],
+      "size": [
+        160,
+        66
+      ],
+      "sources": [
+        {
+          "path": "notification/src/main/kotlin/io/github/neronguyenvn/nerochat/notification/infra/messagequeue/NotificationUserEventListener.kt",
+          "line": 9,
+          "end_line": 45
+        },
+        {
+          "path": "notification/src/main/kotlin/io/github/neronguyenvn/nerochat/notification/service/EmailService.kt",
+          "line": 13,
+          "end_line": 57
+        }
+      ]
+    },
+    {
+      "id": "redis_store",
+      "type": "database",
+      "label": "Redis (Redisson)",
+      "sublabel": "Rate Locks & Msg Cache",
+      "pos": [
+        980,
+        60
+      ],
+      "size": [
+        155,
+        64
+      ],
+      "sources": [
+        {
+          "path": "app/src/main/kotlin/io/github/neronguyenvn/nerochat/infra/caching/RedisConfig.kt",
+          "line": 12,
+          "end_line": 36
+        }
+      ]
+    },
+    {
+      "id": "postgres_db",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Users · Rooms · Messages",
+      "pos": [
+        980,
+        230
+      ],
+      "size": [
+        155,
+        64
+      ],
+      "sources": [
+        {
+          "path": "app/src/main/resources/application.yaml",
+          "line": 8,
+          "end_line": 26
+        }
+      ]
+    },
+    {
+      "id": "rabbitmq_broker",
+      "type": "messagebus",
+      "label": "RabbitMQ",
+      "sublabel": "AMQP Topic Exchanges",
+      "pos": [
+        980,
+        400
+      ],
+      "size": [
+        155,
+        64
+      ],
+      "sources": [
+        {
+          "path": "common/src/main/kotlin/io/github/neronguyenvn/nerochat/infra/messagequeue/RabbitMqConfig.kt",
+          "line": 14,
+          "end_line": 84
+        }
+      ]
+    },
+    {
+      "id": "smtp_server",
+      "type": "external",
+      "label": "Email System",
+      "sublabel": "Transactional SMTP",
+      "pos": [
+        660,
+        560
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "sources": [
+        {
+          "path": "notification/src/main/kotlin/io/github/neronguyenvn/nerochat/notification/service/EmailService.kt",
+          "line": 100,
+          "end_line": 119
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Backend Server (KMP-ChatBackend)",
+      "wraps": [
+        "security_gateway",
+        "ws_handler",
+        "user_module",
+        "chat_module",
+        "notif_module"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Data & Messaging Containers",
+      "wraps": [
+        "redis_store",
+        "postgres_db",
+        "rabbitmq_broker"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client_to_rest",
+      "from": "android_client",
+      "to": "security_gateway",
+      "label": "HTTPS /api/**",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "client_to_ws",
+      "from": "android_client",
+      "to": "ws_handler",
+      "label": "WSS /ws/chat",
+      "variant": "emphasis"
+    },
+    {
+      "id": "rest_to_user",
+      "from": "security_gateway",
+      "to": "user_module",
+      "label": "Auth & User API"
+    },
+    {
+      "id": "rest_to_chat",
+      "from": "security_gateway",
+      "to": "chat_module",
+      "label": "Chat REST API",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "ws_to_chat",
+      "from": "ws_handler",
+      "to": "chat_module",
+      "label": "WsClientMessage"
+    },
+    {
+      "id": "user_to_redis",
+      "from": "user_module",
+      "to": "redis_store",
+      "label": "Rate-limit locks"
+    },
+    {
+      "id": "user_to_postgres",
+      "from": "user_module",
+      "to": "postgres_db",
+      "label": "JPA Users/Tokens",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "chat_to_postgres",
+      "from": "chat_module",
+      "to": "postgres_db",
+      "label": "JPA Rooms/Msgs"
+    },
+    {
+      "id": "chat_to_rabbitmq",
+      "from": "chat_module",
+      "to": "rabbitmq_broker",
+      "label": "AMQP Events",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "rabbitmq_to_notif",
+      "from": "rabbitmq_broker",
+      "to": "notif_module",
+      "label": "Consume UserEvent",
+      "variant": "dashed"
+    },
+    {
+      "id": "notif_to_smtp",
+      "from": "notif_module",
+      "to": "smtp_server",
+      "label": "STARTTLS SMTP",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Contract-Driven Ingress",
+      "items": [
+        "ContractValidationAdvice automatically validates incoming DTOs implementing Validatable from KMP-ChatContract",
+        "Exception handlers map domain failures to flat-wire ApiErrorDto and sealed ServerError codes"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Modular Monolith & Event Bus",
+      "items": [
+        "Domain modules (:user, :chat, :notification) communicate asynchronously via RabbitMQ topic exchanges",
+        "UserEvent.Verified triggers chat participant provisioning; UserEvent.Created triggers verification emails"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "State & Rate Limiting",
+      "items": [
+        "Redisson enforces distributed IP and email rate limits and caches 30-minute message slices",
+        "PostgreSQL persists user credentials, hashed refresh tokens, chat rooms, and UUIDv7 messages"
+      ]
+    }
+  ]
+}

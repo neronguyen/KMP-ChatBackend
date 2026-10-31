@@ -42,6 +42,5 @@ out/
 ### Local configuration file (sdk path, etc) ###
 local.properties
 
-# Structurizr configuration files ###
-.structurizr
-workspace.json
+### Archify working directory ###
+.archify/
