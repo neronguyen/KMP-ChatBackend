@@ -545,7 +545,7 @@
         } ],
         "body" : "{\n  \"error\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
-        "name" : "400 Bad Request. Contract error codes: `OtpExpired`, `MaxAttemptsExceeded`, `ValidationFailed`",
+        "name" : "400 Bad Request. Contract error codes: `OtpExpired`, `ValidationFailed`",
         "status" : "Bad Request",
         "code" : 400,
         "_postman_previewlanguage" : "json",
@@ -555,7 +555,7 @@
         } ],
         "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       }, {
-        "name" : "429 Too Many Requests. Contract error codes: `RateLimitExceeded`",
+        "name" : "429 Too Many Requests. Contract error codes: `MaxAttemptsExceeded`, `RateLimitExceeded`",
         "status" : "Too Many Requests",
         "code" : 429,
         "_postman_previewlanguage" : "json",
@@ -606,7 +606,7 @@
         } ],
         "body" : "{\n  \"error\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       }, {
-        "name" : "400 Bad Request. Contract error codes: `OtpExpired`, `MaxAttemptsExceeded`, `ValidationFailed`",
+        "name" : "400 Bad Request. Contract error codes: `OtpExpired`, `ValidationFailed`",
         "status" : "Bad Request",
         "code" : 400,
         "_postman_previewlanguage" : "json",
@@ -615,6 +615,16 @@
           "value" : "application/json"
         } ],
         "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `MaxAttemptsExceeded`, `RateLimitExceeded`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "409 Conflict. Contract error codes: `SamePassword`",
         "status" : "Conflict",
@@ -625,16 +635,6 @@
           "value" : "application/json"
         } ],
         "body" : "{\n  \"error\" : \"USER_ALREADY_EXISTS\",\n  \"message\" : \"User with this email already exists\"\n}"
-      }, {
-        "name" : "429 Too Many Requests. Contract error codes: `RateLimitExceeded`",
-        "status" : "Too Many Requests",
-        "code" : 429,
-        "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"error\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       } ]
     }, {
       "name" : "Resend verification email",

@@ -7,7 +7,6 @@ import org.springframework.mail.MailException
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
-import org.springframework.web.util.UriComponentsBuilder
 import kotlin.time.Duration
 
 @Service
@@ -16,8 +15,6 @@ class EmailService(
     private val templateService: EmailTemplateService,
     @param:Value($$"${email.from}")
     private val emailFrom: String,
-    @param:Value($$"${email.url}")
-    private val baseUrl: String,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 

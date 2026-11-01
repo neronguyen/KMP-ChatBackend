@@ -56,6 +56,8 @@ class OpenApiConfig {
             is AuthServerError.UserNotFound -> HttpStatus.NOT_FOUND
             is AuthServerError.WrongPassword -> HttpStatus.UNAUTHORIZED
             is AuthServerError.SamePassword -> HttpStatus.CONFLICT
+            is AuthServerError.OtpExpired -> HttpStatus.BAD_REQUEST
+            is AuthServerError.MaxAttemptsExceeded -> HttpStatus.TOO_MANY_REQUESTS
 
             is ChatServerError.ChatRoomNotFound -> HttpStatus.NOT_FOUND
             is ChatServerError.ChatParticipantNotFound -> HttpStatus.NOT_FOUND
