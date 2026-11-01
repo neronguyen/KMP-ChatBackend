@@ -22,11 +22,10 @@ class EmailService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Renders and sends a personalized verification email containing [token] in the verification URL.
+     * Renders and sends a personalized verification email containing the 6-digit [token] OTP.
      * [userId] identifies the user in logs; [email] is the delivery address.
-     * URL construction, template rendering, message preparation, and sending errors propagate.
+     * Template rendering, message preparation, and sending errors propagate.
      */
-    // TODO: Keep authentication tokens out of request URLs.
     fun sendVerificationEmail(
         userId: UserId,
         email: String,
@@ -35,33 +34,27 @@ class EmailService(
     ) {
         logger.info("Sending verification email for user $userId")
 
-        val verificationUrl = UriComponentsBuilder
-            .fromUriString("$baseUrl/api/auth/verify-email")
-            .queryParam("token", token)
-            .build()
-            .toUriString()
-
         val htmlContent = templateService.processTemplate(
             templateName = "emails/account-verification",
             variables = mapOf(
                 "displayName" to displayName,
-                "verificationUrl" to verificationUrl
+                "otpCode" to token,
+                "expiresInMinutes" to 10
             )
         )
 
         sendHtmlEmail(
             to = email,
-            subject = "Verify your Nero Chat account",
+            subject = "Your Nero Chat verification code",
             html = htmlContent
         )
     }
 
     /**
-     * Renders and sends a personalized password-reset email containing [token] in the reset URL.
+     * Renders and sends a personalized password-reset email containing the 6-digit [token] OTP.
      * Displays [expiresIn] in whole minutes and uses [userId] for logging.
-     * URL construction, template rendering, message preparation, and sending errors propagate.
+     * Template rendering, message preparation, and sending errors propagate.
      */
-    // TODO: Keep authentication tokens out of request URLs.
     fun sendPasswordResetEmail(
         userId: UserId,
         email: String,
@@ -71,24 +64,18 @@ class EmailService(
     ) {
         logger.info("Sending password reset email for user $userId")
 
-        val resetPasswordUrl = UriComponentsBuilder
-            .fromUriString("$baseUrl/api/auth/reset-password")
-            .queryParam("token", token)
-            .build()
-            .toUriString()
-
         val htmlContent = templateService.processTemplate(
             templateName = "emails/reset-password",
             variables = mapOf(
                 "displayName" to displayName,
-                "resetPasswordUrl" to resetPasswordUrl,
+                "otpCode" to token,
                 "expiresInMinutes" to expiresIn.inWholeMinutes
             )
         )
 
         sendHtmlEmail(
             to = email,
-            subject = "Reset your Nero Chat password",
+            subject = "Your Nero Chat password reset code",
             html = htmlContent
         )
     }

@@ -93,9 +93,9 @@ jwt:
 email:
   from: ${SMTP_SENDER}
   verification:
-    expiry-hours: 24
+    expiry-minutes: 10
   password-reset:
-    expiry-minutes: 15
+    expiry-minutes: 10
 
 trusted-proxy:
   trusted-ips:

@@ -514,6 +514,58 @@
   }, {
     "name" : "Auth",
     "item" : [ {
+      "name" : "Verify email",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/api/auth/verify-email",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "api", "auth", "verify-email" ]
+        },
+        "description" : "Verifies email address using 6-digit OTP"
+      },
+      "response" : [ {
+        "name" : "204 No Content",
+        "status" : "No Content",
+        "code" : 204,
+        "_postman_previewlanguage" : "json",
+        "header" : [ ]
+      }, {
+        "name" : "401 Unauthorized. Contract error codes: `InvalidToken`",
+        "status" : "Unauthorized",
+        "code" : 401,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `OtpExpired`, `MaxAttemptsExceeded`, `ValidationFailed`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `RateLimitExceeded`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+      } ]
+    }, {
       "name" : "Reset password",
       "request" : {
         "method" : "POST",
@@ -535,12 +587,12 @@
           "host" : [ "{{baseUrl}}" ],
           "path" : [ "api", "auth", "reset-password" ]
         },
-        "description" : "Resets password using reset token"
+        "description" : "Resets password using 6-digit OTP"
       },
       "response" : [ {
-        "name" : "200 OK",
-        "status" : "OK",
-        "code" : 200,
+        "name" : "204 No Content",
+        "status" : "No Content",
+        "code" : 204,
         "_postman_previewlanguage" : "json",
         "header" : [ ]
       }, {
@@ -553,6 +605,16 @@
           "value" : "application/json"
         } ],
         "body" : "{\n  \"error\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
+      }, {
+        "name" : "400 Bad Request. Contract error codes: `OtpExpired`, `MaxAttemptsExceeded`, `ValidationFailed`",
+        "status" : "Bad Request",
+        "code" : 400,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       }, {
         "name" : "409 Conflict. Contract error codes: `SamePassword`",
         "status" : "Conflict",
@@ -573,16 +635,6 @@
           "value" : "application/json"
         } ],
         "body" : "{\n  \"error\" : \"RATE_LIMIT_EXCEEDED\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
-      }, {
-        "name" : "400 Bad Request. Contract error codes: `ValidationFailed`",
-        "status" : "Bad Request",
-        "code" : 400,
-        "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
       } ]
     }, {
       "name" : "Resend verification email",
@@ -1030,40 +1082,6 @@
           "value" : "application/json"
         } ],
         "body" : "{\n  \"error\" : \"VALIDATION_FAILED\",\n  \"message\" : \"Validation failed\",\n  \"fieldErrors\" : {\n    \"email\" : \"Email must not be blank\"\n  }\n}"
-      } ]
-    }, {
-      "name" : "Verify email",
-      "request" : {
-        "method" : "GET",
-        "header" : [ ],
-        "url" : {
-          "raw" : "{{baseUrl}}/api/auth/verify-email?token=sample-token",
-          "host" : [ "{{baseUrl}}" ],
-          "path" : [ "api", "auth", "verify-email" ],
-          "query" : [ {
-            "key" : "token",
-            "value" : "sample-token",
-            "description" : ""
-          } ]
-        },
-        "description" : "Verifies email address using verification token"
-      },
-      "response" : [ {
-        "name" : "200 OK",
-        "status" : "OK",
-        "code" : 200,
-        "_postman_previewlanguage" : "json",
-        "header" : [ ]
-      }, {
-        "name" : "401 Unauthorized. Contract error codes: `InvalidToken`",
-        "status" : "Unauthorized",
-        "code" : 401,
-        "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"error\" : \"UNAUTHORIZED\",\n  \"message\" : \"Authentication required\"\n}"
       } ]
     } ]
   }, {

@@ -5,6 +5,8 @@ import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
@@ -25,6 +27,24 @@ class AuthExceptionHandler {
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             ApiErrorDto(
                 error = AuthServerError.InvalidToken,
+                message = e.message,
+            )
+        )
+
+    @ExceptionHandler(OtpExpiredException::class)
+    fun onOtpExpired(e: OtpExpiredException): ResponseEntity<ApiErrorDto> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiErrorDto(
+                error = AuthServerError.OtpExpired,
+                message = e.message,
+            )
+        )
+
+    @ExceptionHandler(MaxAttemptsExceededException::class)
+    fun onMaxAttemptsExceeded(e: MaxAttemptsExceededException): ResponseEntity<ApiErrorDto> =
+        ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(
+            ApiErrorDto(
+                error = AuthServerError.MaxAttemptsExceeded,
                 message = e.message,
             )
         )

@@ -5,6 +5,8 @@ import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.domain.util.normalizeEmail
 import io.github.neronguyenvn.nerochat.infra.messagequeue.EventPublisher
+import io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
 import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordException
@@ -32,25 +34,24 @@ class PasswordResetService(
     private val refreshTokenRepository: RefreshTokenRepository,
     private val passwordEncoder: PasswordEncoder,
     private val eventPublisher: EventPublisher,
-    @param:Value($$"${email.password-reset.expiry-minutes}") private val expiryMinutes: Long
+    @param:Value($$"${email.password-reset.expiry-minutes:10}") private val expiryMinutes: Long = 10
 ) {
     /**
-     * Invalidates earlier password-reset tokens, saves a new expiring token, and attempts to publish a reset request.
+     * Invalidates earlier password-reset tokens, saves a new expiring 6-digit OTP token, and attempts to publish a reset request.
      * Synchronous event-publishing failures propagate to the caller.
      *
      * @throws UserNotFoundException if no user is registered with [email].
      */
     @Transactional
-    fun requestPasswordReset(email: String){
+    fun requestPasswordReset(email: String) {
         val user = userRepository.findByEmail(normalizeEmail(email))
             ?: throw UserNotFoundException.byEmail()
 
         authTokenRepository.invalidatePasswordResetTokens(user)
 
         val expiryDate = Instant.now().plus(expiryMinutes, ChronoUnit.MINUTES)
-        // TODO: Simplify token param
         val token = AuthTokenEntity(
-            token = SecureTokenGenerator.generate(),
+            token = SecureTokenGenerator.generateOtp(),
             expiredAt = expiryDate,
             tokenType = AuthTokenType.PasswordReset,
             user = user
@@ -69,30 +70,46 @@ class PasswordResetService(
     }
 
     /**
-     * Replaces the user's encoded password, deletes all their refresh tokens, and consumes [token].
+     * Verifies the 6-digit OTP code with brute-force protection (max 5 attempts).
+     * Replaces the user's encoded password, deletes all their refresh tokens, and consumes the token.
      * Existing access tokens are not revoked.
      *
-     * @throws InvalidTokenException if the token is missing, has the wrong type, is used, or is expired.
+     * @throws InvalidTokenException if the token is missing or code is incorrect.
+     * @throws OtpExpiredException if the token has expired.
+     * @throws MaxAttemptsExceededException if 5 failed attempts are reached.
      * @throws SamePasswordException if [newPassword] matches the stored password.
      */
     @Transactional
-    fun resetPassword(token: String, newPassword: String) {
-        val existingToken = authTokenRepository.findByIdOrNull(token)
+    fun resetPassword(email: String, code: String, newPassword: String) {
+        val user = userRepository.findByEmail(normalizeEmail(email))
             ?: throw InvalidTokenException("Password reset token is invalid")
 
-        if (existingToken.tokenType != AuthTokenType.PasswordReset) {
-            throw InvalidTokenException("Password reset token is invalid")
-        }
-
-        if (existingToken.isUsed()) {
-            throw InvalidTokenException("Password reset token is already used")
-        }
+        val existingToken = authTokenRepository.findFirstByUserAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
+            user,
+            AuthTokenType.PasswordReset
+        ) ?: throw InvalidTokenException("Password reset token is invalid")
 
         if (existingToken.isExpired()) {
-            throw InvalidTokenException("Password reset token is expired")
+            throw OtpExpiredException("Password reset token is expired")
         }
 
-        val user = existingToken.user
+        if (existingToken.attempts >= 5) {
+            existingToken.usedAt = Instant.now()
+            authTokenRepository.save(existingToken)
+            throw MaxAttemptsExceededException("Maximum verification attempts exceeded. Please request a new code.")
+        }
+
+        if (existingToken.token != code) {
+            existingToken.attempts += 1
+            if (existingToken.attempts >= 5) {
+                existingToken.usedAt = Instant.now()
+            }
+            authTokenRepository.save(existingToken)
+            if (existingToken.attempts >= 5) {
+                throw MaxAttemptsExceededException("Maximum verification attempts exceeded. Please request a new code.")
+            }
+            throw InvalidTokenException("Password reset token is invalid")
+        }
 
         if (passwordEncoder.matches(newPassword, user.hashedPassword)) {
             throw SamePasswordException()

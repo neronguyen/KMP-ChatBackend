@@ -5,15 +5,22 @@ import io.github.neronguyenvn.nerochat.user.domain.model.AuthTokenType
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import java.time.Instant
+import java.util.UUID
 
 @Entity
 @Table(
     name = "auth_tokens",
     schema = "user_service",
+    indexes = [
+        Index(name = "idx_auth_tokens_user_type", columnList = "user_id, tokenType")
+    ]
 )
 class AuthTokenEntity(
-
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    var id: UUID? = null,
+
+    @Column(nullable = false, length = 16)
     var token: String,
 
     @Column(nullable = false)
@@ -26,6 +33,9 @@ class AuthTokenEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     var user: UserEntity,
+
+    @Column(nullable = false)
+    var attempts: Int = 0,
 
     var usedAt: Instant? = null,
 

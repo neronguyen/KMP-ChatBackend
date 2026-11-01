@@ -4,6 +4,8 @@ import io.github.neronguyenvn.nerochat.domain.event.UserEvent
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.domain.util.normalizeEmail
 import io.github.neronguyenvn.nerochat.infra.messagequeue.EventPublisher
+import io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
 import io.github.neronguyenvn.nerochat.user.domain.model.AuthToken
 import io.github.neronguyenvn.nerochat.user.domain.model.AuthTokenType
@@ -14,7 +16,6 @@ import io.github.neronguyenvn.nerochat.user.infra.database.repository.AuthTokenR
 import io.github.neronguyenvn.nerochat.user.infra.database.repository.UserRepository
 import io.github.neronguyenvn.nerochat.user.infra.security.SecureTokenGenerator
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -25,11 +26,11 @@ class EmailVerificationService(
     private val authTokenRepository: AuthTokenRepository,
     private val userRepository: UserRepository,
     private val eventPublisher: EventPublisher,
-    @param:Value($$"${email.verification.expiry-hours}") private val expiryHours: Long
+    @param:Value($$"${email.verification.expiry-minutes:10}") private val expiryMinutes: Long = 10
 ) {
     /**
-     * Marks the user's existing verification tokens as used and saves a new token with the
-     * configured lifetime in hours. This also applies to users whose email is already verified.
+     * Marks the user's existing verification tokens as used and saves a new 6-digit OTP token with the
+     * configured lifetime in minutes. This also applies to users whose email is already verified.
      *
      * @return the saved token and its user.
      * @throws UserNotFoundException if no user is registered with [email].
@@ -41,10 +42,10 @@ class EmailVerificationService(
 
         authTokenRepository.invalidateEmailVerificationTokens(user)
 
-        val expiryDate = Instant.now().plus(expiryHours, ChronoUnit.HOURS)
+        val expiryDate = Instant.now().plus(expiryMinutes, ChronoUnit.MINUTES)
 
         val token = AuthTokenEntity(
-            token = SecureTokenGenerator.generate(),
+            token = SecureTokenGenerator.generateOtp(),
             expiredAt = expiryDate,
             tokenType = AuthTokenType.EmailVerification,
             user = user
@@ -78,30 +79,46 @@ class EmailVerificationService(
     }
 
     /**
-     * Marks a verification token as used and its user's email as verified.
+     * Verifies the 6-digit OTP code with brute-force protection (max 5 attempts).
+     * Marks the verification token as used and its user's email as verified.
      *
-     * @throws InvalidTokenException if the token is missing, has the wrong type, is used, or is expired.
+     * @throws InvalidTokenException if the token is missing or code is incorrect.
+     * @throws OtpExpiredException if the token has expired.
+     * @throws MaxAttemptsExceededException if 5 failed attempts are reached.
      */
     @Transactional
-    fun verifyEmail(token: String) {
-        val existing = authTokenRepository.findByIdOrNull(token)
+    fun verifyEmail(email: String, code: String) {
+        val user = userRepository.findByEmail(normalizeEmail(email))
             ?: throw InvalidTokenException("Email verification token is invalid")
 
-        if (existing.tokenType != AuthTokenType.EmailVerification) {
+        val existing = authTokenRepository.findFirstByUserAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
+            user,
+            AuthTokenType.EmailVerification
+        ) ?: throw InvalidTokenException("Email verification token is invalid")
+
+        if (existing.isExpired()) {
+            throw OtpExpiredException("Email verification token is expired")
+        }
+
+        if (existing.attempts >= 5) {
+            existing.usedAt = Instant.now()
+            authTokenRepository.save(existing)
+            throw MaxAttemptsExceededException("Maximum verification attempts exceeded. Please request a new code.")
+        }
+
+        if (existing.token != code) {
+            existing.attempts += 1
+            if (existing.attempts >= 5) {
+                existing.usedAt = Instant.now()
+            }
+            authTokenRepository.save(existing)
+            if (existing.attempts >= 5) {
+                throw MaxAttemptsExceededException("Maximum verification attempts exceeded. Please request a new code.")
+            }
             throw InvalidTokenException("Email verification token is invalid")
         }
 
-        if (existing.isUsed()) {
-            throw InvalidTokenException("Email verification token is already used")
-        }
-
-        if (existing.isExpired()) {
-            throw InvalidTokenException("Email verification token is expired")
-        }
-
-        val now = Instant.now()
-        existing.usedAt = now
-        val user = existing.user
+        existing.usedAt = Instant.now()
         user.isEmailVerified = true
 
         authTokenRepository.save(existing)

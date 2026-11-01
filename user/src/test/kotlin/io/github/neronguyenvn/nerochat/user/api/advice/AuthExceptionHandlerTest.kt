@@ -4,6 +4,8 @@ import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
@@ -16,6 +18,28 @@ import org.springframework.http.HttpStatus
 class AuthExceptionHandlerTest {
 
     private val handler = AuthExceptionHandler()
+
+    @Test
+    fun `onOtpExpired returns 400 and OTP_EXPIRED error`() {
+        val ex = OtpExpiredException("Code expired")
+        val response = handler.onOtpExpired(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(AuthServerError.OtpExpired.code, response.body?.error)
+        assertEquals("Code expired", response.body?.message)
+    }
+
+    @Test
+    fun `onMaxAttemptsExceeded returns 429 and MAX_ATTEMPTS_EXCEEDED error`() {
+        val ex = MaxAttemptsExceededException("Too many attempts")
+        val response = handler.onMaxAttemptsExceeded(ex)
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(AuthServerError.MaxAttemptsExceeded.code, response.body?.error)
+        assertEquals("Too many attempts", response.body?.message)
+    }
 
     @Test
     fun `onInvalidToken returns 401 and INVALID_TOKEN error`() {

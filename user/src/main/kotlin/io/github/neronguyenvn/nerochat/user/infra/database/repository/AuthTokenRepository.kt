@@ -8,9 +8,16 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.time.Instant
+import java.util.UUID
 
 @Repository
-interface AuthTokenRepository : JpaRepository<AuthTokenEntity, String> {
+interface AuthTokenRepository : JpaRepository<AuthTokenEntity, UUID> {
+
+    /** Finds the latest active token for [user] and [tokenType]. */
+    fun findFirstByUserAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
+        user: UserEntity,
+        tokenType: AuthTokenType
+    ): AuthTokenEntity?
 
     /** Sets the usage timestamp on all of the user's verification tokens, including used or expired ones. */
     fun invalidateEmailVerificationTokens(user: UserEntity) {
