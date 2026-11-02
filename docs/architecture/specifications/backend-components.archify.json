@@ -1,4 +1,4 @@
-{
+  {
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
@@ -347,6 +347,35 @@
       "from": "rabbitmq_broker",
       "to": "notif_module",
       "label": "Consume UserEvent",
+      "variant": "dashed"
+    },
+    {
+      "id": "chat_to_redis",
+      "from": "chat_module",
+      "to": "redis_store",
+      "label": "Msg slice cache"
+    },
+    {
+      "id": "chat_to_ws",
+      "from": "chat_module",
+      "to": "ws_handler",
+      "label": "InternalChatEvent",
+      "variant": "dashed"
+    },
+    {
+      "id": "user_to_rabbitmq",
+      "from": "user_module",
+      "to": "rabbitmq_broker",
+      "label": "Publish UserEvent",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "rabbitmq_to_chat",
+      "from": "rabbitmq_broker",
+      "to": "chat_module",
+      "label": "Consume user.verified",
       "variant": "dashed"
     },
     {
