@@ -7,6 +7,7 @@ jwt = "0.12.6"
 redission = "4.5.0"
 contract = "0.3.1"
 springdoc = "3.1.1"
+konsist = "0.18.1"
 
 [libraries]
 # Spring Boot Starters
@@ -54,6 +55,7 @@ swagger-annotations-jakarta = { module = "io.swagger.core.v3:swagger-annotations
 # Testing
 h2 = { module = "com.h2database:h2" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

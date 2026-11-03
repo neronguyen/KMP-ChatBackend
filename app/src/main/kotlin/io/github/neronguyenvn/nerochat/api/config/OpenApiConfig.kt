@@ -120,7 +120,7 @@ class OpenApiConfig {
 
         for ((status, errors) in groupedByStatus) {
             val statusCode = status.value().toString()
-            val errorCodes = errors.map { it::class.simpleName ?: it.toString() }.distinct()
+            val errorCodes = errors.map { it.code.value }.distinct()
             val codesFormatted = errorCodes.joinToString(", ") { "`$it`" }
             val description = "${status.reasonPhrase}. Contract error codes: $codesFormatted"
 
@@ -169,9 +169,9 @@ class OpenApiConfig {
             required = listOf("error", "message")
             addProperty(
                 "error",
-                ObjectSchema()
-                    .description("Contract error object or discriminator identifying the exact error condition")
-                    .example("ValidationFailed")
+                StringSchema()
+                    .description("Contract error code identifying the exact error condition")
+                    .example("CommonServerError.ValidationFailed")
             )
             addProperty(
                 "message",

@@ -4,6 +4,7 @@ import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
+import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessageSlice
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
@@ -55,19 +56,39 @@ class ChatRoomControllerTest {
         `when`(chatRoomService.existsById(chatRoomId)).thenReturn(true)
         `when`(chatRoomService.getChatRoomById(chatRoomId, userId)).thenReturn(chatRoom)
 
-        val expectedResponse = ChatMessageSliceDto(
+        val participant = ChatParticipant(
+            userId = userId,
+            email = "user@example.com",
+            displayName = "User",
+            profilePictureUrl = null
+        )
+        val messageId = UUID.randomUUID().toString()
+        val createdAt = Clock.System.now()
+        val domainSlice = ChatMessageSlice(
             messages = listOf(
-                ChatMessageDto(
-                    id = UUID.randomUUID().toString(),
-                    roomId = chatRoomId.value,
-                    senderId = userId.value,
+                ChatMessage(
+                    id = ChatMessageId(messageId),
+                    roomId = chatRoomId,
+                    sender = participant,
                     content = "Hello",
-                    createdAt = Clock.System.now()
+                    createdAt = createdAt
                 )
             ),
             hasMore = false
         )
-        `when`(chatMessageService.getChatMessages(chatRoomId, null)).thenReturn(expectedResponse)
+        val expectedResponse = ChatMessageSliceDto(
+            messages = listOf(
+                ChatMessageDto(
+                    id = messageId,
+                    roomId = chatRoomId.value,
+                    senderId = userId.value,
+                    content = "Hello",
+                    createdAt = createdAt
+                )
+            ),
+            hasMore = false
+        )
+        `when`(chatMessageService.getChatMessages(chatRoomId, null)).thenReturn(domainSlice)
 
         val result = controller.getChatMessages(roomId = chatRoomId)
 

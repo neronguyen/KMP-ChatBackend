@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     api(libs.contract.common)
+    api(libs.validation.common)
     api(libs.swagger.annotations.jakarta)
     implementation(libs.jwt.api)
     runtimeOnly(libs.jwt.impl)

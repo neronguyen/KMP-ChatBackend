@@ -79,7 +79,7 @@ class ChatRoomController(
         return chatMessageService.getChatMessages(
             roomId = roomId,
             before = before,
-        )
+        ).asDto()
     }
 
     @Operation(summary = "Create direct chat room", description = "Creates a 1-on-1 direct chat room")

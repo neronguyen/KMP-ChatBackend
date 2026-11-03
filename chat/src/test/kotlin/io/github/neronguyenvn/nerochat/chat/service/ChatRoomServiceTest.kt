@@ -3,6 +3,7 @@ package io.github.neronguyenvn.nerochat.chat.service
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.DirectChatRoomModificationException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
@@ -23,8 +24,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentCaptor
-import org.springframework.http.HttpStatus
-import org.springframework.web.server.ResponseStatusException
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -388,7 +387,7 @@ class ChatRoomServiceTest {
     }
 
     @Test
-    fun `addParticipantsToChatRoom throws ResponseStatusException when chatRoom type is DIRECT`() {
+    fun `addParticipantsToChatRoom throws DirectChatRoomModificationException when chatRoom type is DIRECT`() {
         val roomId = ChatRoomId(UUID.randomUUID())
         val roomEntity = ChatRoomEntity(
             id = roomId.asUUID(),
@@ -399,7 +398,7 @@ class ChatRoomServiceTest {
         )
         `when`(chatRoomRepository.findById(roomId.asUUID())).thenReturn(Optional.of(roomEntity))
 
-        val ex = assertThrows<ResponseStatusException> {
+        val ex = assertThrows<DirectChatRoomModificationException> {
             chatRoomService.addParticipantsToChatRoom(
                 roomId = roomId,
                 requesterId = creatorId,
@@ -407,7 +406,7 @@ class ChatRoomServiceTest {
             )
         }
 
-        assertEquals(HttpStatus.BAD_REQUEST, ex.statusCode)
+        assertEquals("Cannot add participants to a direct chat room", ex.message)
         verify(chatRoomRepository, never()).save(any())
     }
 

@@ -272,49 +272,49 @@ object PostmanCollectionGenerator {
         }
 
         val declaredErrorCode = apiResponse.description?.let { desc ->
-            Regex("`([A-Z0-9_]+)`").find(desc)?.groupValues?.get(1)
+            Regex("`([A-Za-z0-9_.]+)`").find(desc)?.groupValues?.get(1)
         }
         val errorCode = declaredErrorCode ?: when (statusCode) {
-            "400" -> "VALIDATION_FAILED"
-            "401" -> "UNAUTHORIZED"
-            "403" -> "FORBIDDEN"
-            "404" -> "CHAT_ROOM_NOT_FOUND"
-            "409" -> "USER_ALREADY_EXISTS"
-            "429" -> "RATE_LIMIT_EXCEEDED"
-            else -> "INTERNAL_SERVER_ERROR"
+            "400" -> "CommonServerError.ValidationFailed"
+            "401" -> "CommonServerError.Unauthorized"
+            "403" -> "ChatServerError.ParticipantNotInRoom"
+            "404" -> "ChatServerError.ChatRoomNotFound"
+            "409" -> "AuthServerError.UserAlreadyExists"
+            "429" -> "CommonServerError.RateLimitExceeded"
+            else -> "CommonServerError.InternalServerError"
         }
 
         val errorPayload = linkedMapOf<String, Any?>(
             "error" to errorCode,
             "message" to getErrorMessageForCode(errorCode)
         )
-        if (errorCode == "VALIDATION_FAILED") {
+        if (errorCode.endsWith("ValidationFailed") || errorCode == "VALIDATION_FAILED") {
             errorPayload["fieldErrors"] = mapOf("email" to "Email must not be blank")
-        } else if (errorCode == "RATE_LIMIT_EXCEEDED") {
+        } else if (errorCode.endsWith("RateLimitExceeded") || errorCode == "RATE_LIMIT_EXCEEDED") {
             errorPayload["retryAfterSeconds"] = 60
         }
         return objectMapper.writeValueAsString(errorPayload)
     }
 
-    private fun getErrorMessageForCode(errorCode: String): String = when (errorCode) {
-        "VALIDATION_FAILED" -> "Validation failed"
-        "BAD_REQUEST" -> "Invalid request"
-        "INVALID_CHAT_ROOM_SIZE" -> "Chat room must have at least 2 participants"
-        "UNAUTHORIZED" -> "Authentication required"
-        "INVALID_CREDENTIALS" -> "Invalid email or password"
-        "INVALID_TOKEN" -> "Invalid or expired token"
-        "WRONG_PASSWORD" -> "Current password is incorrect"
-        "FORBIDDEN" -> "Access denied"
-        "EMAIL_NOT_VERIFIED" -> "Email is not verified"
-        "USER_NOT_FOUND" -> "User not found"
-        "CHAT_ROOM_NOT_FOUND" -> "Chat room not found"
-        "CHAT_PARTICIPANT_NOT_FOUND" -> "Chat participant not found"
-        "MESSAGE_NOT_FOUND" -> "Message not found"
-        "USER_ALREADY_EXISTS" -> "User with this email already exists"
-        "SAME_PASSWORD" -> "New password cannot be the same as the old password"
-        "PARTICIPANT_ALREADY_IN_ROOM" -> "Participant is already in the chat room"
-        "DUPLICATE_MESSAGE_ID" -> "Message with this ID already exists"
-        "RATE_LIMIT_EXCEEDED" -> "Too many requests. Please try again later."
+    private fun getErrorMessageForCode(errorCode: String): String = when (errorCode.substringAfterLast('.')) {
+        "ValidationFailed", "VALIDATION_FAILED" -> "Validation failed"
+        "BadRequest", "BAD_REQUEST" -> "Invalid request"
+        "InvalidChatRoomSize", "INVALID_CHAT_ROOM_SIZE" -> "Chat room must have at least 2 participants"
+        "Unauthorized", "UNAUTHORIZED" -> "Authentication required"
+        "InvalidCredentials", "INVALID_CREDENTIALS" -> "Invalid email or password"
+        "InvalidToken", "INVALID_TOKEN" -> "Invalid or expired token"
+        "WrongPassword", "WRONG_PASSWORD" -> "Current password is incorrect"
+        "Forbidden", "FORBIDDEN" -> "Access denied"
+        "EmailNotVerified", "EMAIL_NOT_VERIFIED" -> "Email is not verified"
+        "UserNotFound", "USER_NOT_FOUND" -> "User not found"
+        "ChatRoomNotFound", "CHAT_ROOM_NOT_FOUND" -> "Chat room not found"
+        "ChatParticipantNotFound", "CHAT_PARTICIPANT_NOT_FOUND" -> "Chat participant not found"
+        "MessageNotFound", "MESSAGE_NOT_FOUND" -> "Message not found"
+        "UserAlreadyExists", "USER_ALREADY_EXISTS" -> "User with this email already exists"
+        "SamePassword", "SAME_PASSWORD" -> "New password cannot be the same as the old password"
+        "ParticipantAlreadyInRoom", "PARTICIPANT_ALREADY_IN_ROOM" -> "Participant is already in the chat room"
+        "DuplicateMessageId", "DUPLICATE_MESSAGE_ID" -> "Message with this ID already exists"
+        "RateLimitExceeded", "RATE_LIMIT_EXCEEDED" -> "Too many requests. Please try again later."
         else -> "An unexpected error occurred"
     }
 

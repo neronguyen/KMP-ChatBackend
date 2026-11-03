@@ -25,6 +25,7 @@ import org.springframework.web.socket.PingMessage
 import org.springframework.web.socket.PongMessage
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator
 import org.springframework.web.socket.handler.TextWebSocketHandler
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -69,11 +70,10 @@ class ChatWebSocketHandler(
 
         val userId = jwtService.getUserIdFromToken(token = authHeader)
 
-        // TODO: Wrap WebSocketSession with ConcurrentWebSocketSessionDecorator in afterConnectionEstablished
-        // to prevent IllegalStateException from concurrent writes across ping scheduler, broadcast threads, and event listeners.
+        val decoratedSession = ConcurrentWebSocketSessionDecorator(session, 5000, 64 * 1024)
         val userSession = UserSession(
             userId = userId,
-            session = session
+            session = decoratedSession
         )
 
         sessionsById[session.id] = userSession
@@ -240,6 +240,17 @@ class ChatWebSocketHandler(
         userSession: UserSession,
         incoming: WsClientMessage.NewMessage,
     ) {
+        val validationErrors = incoming.validate()
+        if (validationErrors.isNotEmpty()) {
+            userSession.sendError(
+                error = ChatServerError.InvalidPayload,
+                message = validationErrors.first().message,
+                roomId = incoming.roomId,
+                messageId = incoming.messageId
+            )
+            return
+        }
+
         val senderId = userSession.userId
         val roomId = ChatRoomId(incoming.roomId)
         val allowedChatRooms = roomIdsByUserId[senderId]

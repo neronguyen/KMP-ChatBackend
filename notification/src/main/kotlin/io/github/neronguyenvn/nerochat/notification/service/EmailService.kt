@@ -7,7 +7,8 @@ import org.springframework.mail.MailException
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
-import org.springframework.web.util.UriComponentsBuilder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import kotlin.time.Duration
 
 @Service
@@ -35,11 +36,8 @@ class EmailService(
     ) {
         logger.info("Sending verification email for user $userId")
 
-        val verificationUrl = UriComponentsBuilder
-            .fromUriString("$baseUrl/api/auth/verify-email")
-            .queryParam("token", token)
-            .build()
-            .toUriString()
+        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
+        val verificationUrl = "$baseUrl/api/auth/verify-email?token=$encodedToken"
 
         val htmlContent = templateService.processTemplate(
             templateName = "emails/account-verification",
@@ -71,11 +69,8 @@ class EmailService(
     ) {
         logger.info("Sending password reset email for user $userId")
 
-        val resetPasswordUrl = UriComponentsBuilder
-            .fromUriString("$baseUrl/api/auth/reset-password")
-            .queryParam("token", token)
-            .build()
-            .toUriString()
+        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
+        val resetPasswordUrl = "$baseUrl/api/auth/reset-password?token=$encodedToken"
 
         val htmlContent = templateService.processTemplate(
             templateName = "emails/reset-password",

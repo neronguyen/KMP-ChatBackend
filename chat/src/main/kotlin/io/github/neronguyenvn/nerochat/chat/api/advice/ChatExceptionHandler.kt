@@ -3,6 +3,7 @@ package io.github.neronguyenvn.nerochat.chat.api.advice
 import io.github.neronguyenvn.nerochat.chat.domain.exception.*
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
+import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
@@ -73,6 +74,15 @@ class ChatExceptionHandler {
         ResponseEntity.status(HttpStatus.FORBIDDEN).body(
             ApiErrorDto(
                 error = ChatServerError.NotMessageSender,
+                message = e.message,
+            )
+        )
+
+    @ExceptionHandler(DirectChatRoomModificationException::class)
+    fun onDirectChatRoomModification(e: DirectChatRoomModificationException): ResponseEntity<ApiErrorDto> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiErrorDto(
+                error = CommonServerError.BadRequest,
                 message = e.message,
             )
         )

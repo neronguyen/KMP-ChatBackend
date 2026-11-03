@@ -1,9 +1,9 @@
 package io.github.neronguyenvn.nerochat.chat.service
 
-import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
+import io.github.neronguyenvn.nerochat.chat.domain.exception.DirectChatRoomModificationException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.InvalidChatRoomSizeException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
@@ -21,10 +21,8 @@ import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import kotlin.time.ExperimentalTime
 
@@ -177,7 +175,7 @@ class ChatRoomService(
             ?: throw ChatRoomNotFoundException()
 
         if (chatRoom.type == ChatRoomType.DIRECT) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot add participants to a direct chat room")
+            throw DirectChatRoomModificationException()
         }
 
         val isRequesterInChatRoom = chatRoom.participants.any {

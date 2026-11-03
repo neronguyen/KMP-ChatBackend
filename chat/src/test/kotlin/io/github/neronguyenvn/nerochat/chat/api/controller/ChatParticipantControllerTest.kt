@@ -12,8 +12,10 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 class ChatParticipantControllerTest {
@@ -127,5 +129,13 @@ class ChatParticipantControllerTest {
             exception.message
         )
         verify(chatParticipantService).findChatParticipantByEmail(searchEmail)
+    }
+
+    @Test
+    fun `getChatParticipant throws ResponseStatusException when email format is invalid`() {
+        val ex = assertThrows<ResponseStatusException> {
+            controller.getChatParticipant(email = "invalid-email")
+        }
+        assertEquals(HttpStatus.BAD_REQUEST, ex.statusCode)
     }
 }

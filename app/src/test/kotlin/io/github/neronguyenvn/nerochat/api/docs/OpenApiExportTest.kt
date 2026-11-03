@@ -144,7 +144,7 @@ class OpenApiExportTest {
         )
 
         // 4. Schema property types match contract
-        assertEquals("object", properties.path("error").path("type").asText())
+        assertEquals("string", properties.path("error").path("type").asText())
         assertEquals("object", properties.path("fieldErrors").path("type").asText())
         assertEquals("string", properties.path("fieldErrors").path("additionalProperties").path("type").asText())
         assertEquals("integer", properties.path("retryAfterSeconds").path("type").asText())

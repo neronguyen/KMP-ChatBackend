@@ -2,7 +2,6 @@ package io.github.neronguyenvn.nerochat.api.security
 
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.service.JwtService
-import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -16,8 +15,8 @@ class JwtAuthenticationFilter(private val jwtService: JwtService) : OncePerReque
 
     /**
      * Sets the security principal from a valid access token, then continues the filter chain.
-     * Missing or rejected tokens leave the current authentication unchanged. [UserNotFoundException]
-     * is ignored; other errors from extracting the principal or the remaining filters propagate.
+     * Missing or rejected tokens leave the current authentication unchanged.
+     * Errors from extracting the principal or the remaining filters propagate.
      */
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -35,8 +34,6 @@ class JwtAuthenticationFilter(private val jwtService: JwtService) : OncePerReque
                 )
                 SecurityContextHolder.getContext().authentication = auth
             } catch (_: InvalidTokenException) {
-                // leave context anonymous; downstream authorization will return 401
-            } catch (_: UserNotFoundException) {
                 // leave context anonymous; downstream authorization will return 401
             }
         }

@@ -1,6 +1,5 @@
 package io.github.neronguyenvn.nerochat.chat.service
 
-import io.github.neronguyenvn.nerochat.chat.api.mapper.asDto
 import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatRoomNotFoundException
@@ -8,12 +7,12 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdE
 import io.github.neronguyenvn.nerochat.chat.domain.exception.MessageNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.NotMessageSenderException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
+import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessageSlice
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.asExternalModel
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatMessageRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatParticipantRepository
 import io.github.neronguyenvn.nerochat.chat.infra.database.repository.ChatRoomRepository
-import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.domain.event.ChatEvent
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
@@ -130,7 +129,7 @@ class ChatMessageService(
     fun getChatMessages(
         roomId: ChatRoomId,
         before: Instant?,
-    ): ChatMessageSliceDto {
+    ): ChatMessageSlice {
         val pageable = PageRequest.of(0, DEFAULT_PAGE_SIZE)
         val slice = if (before == null) {
             chatMessageRepository.findByRoomId(
@@ -145,8 +144,8 @@ class ChatMessageService(
             )
         }
 
-        return ChatMessageSliceDto(
-            messages = slice.content.asReversed().map { it.asExternalModel().asDto() },
+        return ChatMessageSlice(
+            messages = slice.content.asReversed().map { it.asExternalModel() },
             hasMore = slice.hasNext()
         )
     }

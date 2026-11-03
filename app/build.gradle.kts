@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.konsist)
     testRuntimeOnly(libs.h2)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

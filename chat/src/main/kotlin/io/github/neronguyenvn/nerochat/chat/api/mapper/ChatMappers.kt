@@ -1,9 +1,11 @@
 package io.github.neronguyenvn.nerochat.chat.api.mapper
 
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
+import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessageSlice
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
 import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageDto
+import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
 import io.github.neronguyenvn.nerochat.contract.chat.ChatParticipantDto
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomDto
 
@@ -13,6 +15,11 @@ fun ChatMessage.asDto(): ChatMessageDto = ChatMessageDto(
     senderId = sender.userId.value,
     content = content,
     createdAt = createdAt,
+)
+
+fun ChatMessageSlice.asDto(): ChatMessageSliceDto = ChatMessageSliceDto(
+    messages = messages.map { it.asDto() },
+    hasMore = hasMore,
 )
 
 fun ChatParticipant.asDto(): ChatParticipantDto = ChatParticipantDto(
