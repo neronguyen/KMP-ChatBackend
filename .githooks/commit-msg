@@ -1,0 +1,30 @@
+#!/bin/sh
+# .githooks/commit-msg
+# Enforce Signed-off-by and Assisted-by trailers on commits.
+
+msg_file="$1"
+
+# 1. Skip automatic and transient commits:
+# Merge commits, reverts, git commit --fixup, and git commit --squash
+subject=$(head -n1 "$msg_file")
+case "$subject" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *)
+    exit 0
+    ;;
+esac
+
+# 2. Parse the trailer block using native git interpret-trailers
+trailers=$(git interpret-trailers --parse "$msg_file")
+
+# 3. Assert required trailers:
+echo "$trailers" | grep -q '^Signed-off-by: ' || {
+  echo "commit-msg: error: missing 'Signed-off-by' trailer (run: git commit -s)" >&2
+  exit 1
+}
+
+echo "$trailers" | grep -q '^Assisted-by: ' || {
+  echo "commit-msg: error: missing 'Assisted-by: <model>' trailer in commit message" >&2
+  exit 1
+}
+
+exit 0

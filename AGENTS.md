@@ -7,10 +7,16 @@ Before proposing any plan or writing code, read and strictly follow:
    - Level 3 Backend Components: `docs/architecture/specifications/backend-components.archify.json` (Viewer: `docs/architecture/interactive/c4-backend-components.html`)
 3. Baseline Audit Snapshot: `docs/audit/2026-11-baseline-backend.md`
 
-Every implementation plan must satisfy the **Mandatory Agent Planning Protocol** defined in `PHILOSOPHY.md` before execution:
-1. **Core Mechanic & Trade-off**: Which state lifecycle, failure mode, or communication invariant is being solved, and what was traded off?
-2. **Contract & Boundary Impact**: How does this change affect the client–server schema and module boundaries?
-3. **Deterministic Verification Step**: What exact automated test or CLI command proves this change works headlessly?
+Every implementation plan must satisfy the **Mandatory Agent Planning Protocol** defined in `PHILOSOPHY.md` Section 5 before execution (read it; it is not restated here).
+
+### 1.1 Design-First Flow Gate (Tooling Binding for Protocol Step 3)
+To satisfy Step 3 (`To-Be Flow & Lifecycle Spec`) of the Planning Protocol:
+1. Cross-repo wire flows are defined in `:contract` (`docs/architecture/specifications/flows/`). Consult `docs/architecture/flows/README.md`. Backend-internal flows are stored in `docs/architecture/specifications/flows/<name>.<type>.archify.json` (`<type>` = `sequence` | `lifecycle`) and registered in `docs/architecture/flows/README.md`.
+2. Mark `meta.title` and the registry row `[PLANNED]` before writing code.
+3. **Completion Invariant (No Dangling `[PLANNED]`)**: After Step 4 verification passes, flip `[PLANNED]` → `[AS-IS]` in both the `.archify.json` spec and `docs/architecture/flows/README.md`, re-render interactive HTML and image assets, and verify that no in-scope flow remains `[PLANNED]`.
+4. Render and verify the interactive HTML diagram via:
+   `node ~/.gemini/config/skills/archify/bin/archify.mjs deliver <type> <input.json> <output.html> --quality showcase --json && node ~/.gemini/config/skills/archify/bin/archify.mjs check <output.html> --json`
+5. **Static Image Assets**: For diagrams embedded in `README.md` or markdown documentation, export and update dark and light static image assets in `docs/architecture/assets/<name>.png` and `docs/architecture/assets/<name>.light.png`.
 
 ---
 
@@ -46,9 +52,4 @@ All agent verification must be performed using these verified-green commands:
 
 *Note: In sandboxed environments with daemon lock contention, using `--gradle-user-home=/tmp/gradle-ro-home` with `GRADLE_RO_DEP_CACHE` avoids lock collisions with host daemons.*
 
----
 
-## 4. Git Commit Guidelines
-When creating git commits:
-1. **Sign-off (`-s`)**: Always include the `-s` flag (`--signoff`) when running `git commit`.
-2. **Model Attribution Trailer**: Always append an `Assisted-by:` trailer to the commit message with the active model name (e.g., `Assisted-by: Gemini 3.8 Flash`).

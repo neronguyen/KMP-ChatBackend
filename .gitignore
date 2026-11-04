@@ -44,3 +44,7 @@ local.properties
 
 ### Archify working directory ###
 .archify/
+
+# Archify local delivery sidecars
+*.delivery.json
+*.delivery-*.json
