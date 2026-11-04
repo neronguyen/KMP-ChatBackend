@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.api.advice
 
+import io.github.neronguyenvn.nerochat.api.validation.InvalidEmailException
 import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
@@ -14,12 +15,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.mock.http.MockHttpInputMessage
-import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.FieldError
+import org.springframework.web.ErrorResponseException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
-import org.springframework.web.ErrorResponseException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.server.ResponseStatusException
 
@@ -73,6 +73,18 @@ class CommonExceptionHandlerTest {
         assertEquals(CommonServerError.BadRequest.code, response.body?.error)
         assertEquals("Parameter 'roomId' must be a valid UUID", response.body?.message)
         assertFalse(response.body?.message?.contains("not-a-valid-uuid") == true)
+    }
+
+    @Test
+    fun `handles InvalidEmailException with 400 status and does not leak invalid value`() {
+        val ex = InvalidEmailException(parameterName = "email", invalidValue = "not-an-email")
+        val response = handler.onInvalidEmail(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(CommonServerError.BadRequest.code, response.body?.error)
+        assertEquals("Parameter 'email' must be a valid email", response.body?.message)
+        assertFalse(response.body?.message?.contains("not-an-email") == true)
     }
 
     @Test

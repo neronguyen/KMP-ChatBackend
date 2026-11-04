@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.chat.api.controller
 
+import io.github.neronguyenvn.nerochat.api.validation.InvalidEmailException
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ChatParticipantNotFoundException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.service.ChatParticipantService
@@ -9,14 +10,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
-import org.springframework.http.HttpStatus
+import org.mockito.Mockito.*
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.server.ResponseStatusException
-import java.util.UUID
+import java.util.*
 
 class ChatParticipantControllerTest {
 
@@ -132,10 +129,11 @@ class ChatParticipantControllerTest {
     }
 
     @Test
-    fun `getChatParticipant throws ResponseStatusException when email format is invalid`() {
-        val ex = assertThrows<ResponseStatusException> {
+    fun `getChatParticipant throws InvalidEmailException when email format is invalid`() {
+        val ex = assertThrows<InvalidEmailException> {
             controller.getChatParticipant(email = "invalid-email")
         }
-        assertEquals(HttpStatus.BAD_REQUEST, ex.statusCode)
+        assertEquals("email", ex.parameterName)
+        assertEquals("invalid-email", ex.invalidValue)
     }
 }

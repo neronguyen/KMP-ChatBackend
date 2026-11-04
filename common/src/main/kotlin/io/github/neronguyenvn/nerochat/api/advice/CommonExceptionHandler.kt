@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.api.advice
 
+import io.github.neronguyenvn.nerochat.api.validation.InvalidEmailException
 import io.github.neronguyenvn.nerochat.api.validation.InvalidUuidException
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
@@ -55,6 +56,14 @@ class CommonExceptionHandler {
     @ExceptionHandler(InvalidUuidException::class)
     fun onInvalidUuid(e: InvalidUuidException): ResponseEntity<ApiErrorDto> {
         log.warn("Invalid UUID parameter '{}'", e.parameterName)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiErrorDto(error = CommonServerError.BadRequest, message = e.clientMessage)
+        )
+    }
+
+    @ExceptionHandler(InvalidEmailException::class)
+    fun onInvalidEmail(e: InvalidEmailException): ResponseEntity<ApiErrorDto> {
+        log.warn("Invalid email parameter '{}'", e.parameterName)
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
             ApiErrorDto(error = CommonServerError.BadRequest, message = e.clientMessage)
         )
