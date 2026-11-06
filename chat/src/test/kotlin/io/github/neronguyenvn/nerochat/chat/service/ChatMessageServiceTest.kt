@@ -18,6 +18,7 @@ import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.infra.messagequeue.EventPublisher
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -325,7 +326,10 @@ class ChatMessageServiceTest {
 
         chatMessageService.deleteMessage(messageId = messageId, requesterId = senderId)
 
-        verify(chatMessageRepository).delete(messageEntity)
+        verify(chatMessageRepository).save(messageEntity)
+        assertEquals("", messageEntity.content)
+        assertNotNull(messageEntity.deletedAt)
+        assertTrue(messageEntity.isDeleted)
         val captor: ArgumentCaptor<Any> = ArgumentCaptor.forClass(Any::class.java)
         verify(applicationEventPublisher).publishEvent(captor.capture())
         val event = captor.value as InternalChatEvent.MessageDeletedEvent
@@ -348,6 +352,7 @@ class ChatMessageServiceTest {
             chatMessageService.deleteMessage(messageId = messageId, requesterId = otherSenderId)
         }
 
+        verify(chatMessageRepository, never()).save(any())
         verify(chatMessageRepository, never()).delete(any())
     }
 
@@ -360,6 +365,7 @@ class ChatMessageServiceTest {
             chatMessageService.deleteMessage(messageId = messageId, requesterId = senderId)
         }
 
+        verify(chatMessageRepository, never()).save(any())
         verify(chatMessageRepository, never()).delete(any())
     }
 }

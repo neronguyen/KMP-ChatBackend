@@ -15,6 +15,7 @@ fun ChatMessage.asDto(): ChatMessageDto = ChatMessageDto(
     senderId = sender.userId.value,
     content = content,
     createdAt = createdAt,
+    deletedAt = deletedAt,
 )
 
 fun ChatMessageSlice.asDto(): ChatMessageSliceDto = ChatMessageSliceDto(

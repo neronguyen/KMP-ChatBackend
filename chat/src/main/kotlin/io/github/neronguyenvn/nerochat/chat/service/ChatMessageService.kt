@@ -106,7 +106,9 @@ class ChatMessageService(
             throw NotMessageSenderException()
         }
 
-        chatMessageRepository.delete(message)
+        message.deletedAt = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+        message.content = ""
+        chatMessageRepository.save(message)
 
         applicationEventPublisher.publishEvent(
             InternalChatEvent.MessageDeletedEvent(

@@ -58,8 +58,14 @@ class ChatMessageEntity(
     var sender: ChatParticipantEntity,
 
     @Column(nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+    var createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS),
+
+    @Column(name = "deleted_at")
+    var deletedAt: Instant? = null
 ) : Persistable<UUID> {
+
+    val isDeleted: Boolean
+        get() = deletedAt != null
 
     @Transient
     private var isNewEntity: Boolean = true
@@ -86,5 +92,6 @@ fun ChatMessageEntity.asExternalModel() = ChatMessage(
     roomId = ChatRoomId(roomId.toString()),
     content = content,
     sender = sender.asExternalModel(),
-    createdAt = createdAt.toKotlinInstant()
+    createdAt = createdAt.toKotlinInstant(),
+    deletedAt = deletedAt?.toKotlinInstant()
 )

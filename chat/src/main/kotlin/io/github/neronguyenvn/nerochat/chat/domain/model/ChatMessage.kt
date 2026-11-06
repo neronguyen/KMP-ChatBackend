@@ -11,5 +11,9 @@ data class ChatMessage(
     val roomId: ChatRoomId,
     val sender: ChatParticipant,
     val content: String,
-    val createdAt: Instant
-)
+    val createdAt: Instant,
+    val deletedAt: Instant? = null
+) {
+    val isDeleted: Boolean
+        get() = deletedAt != null
+}
