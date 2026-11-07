@@ -18,6 +18,10 @@ To satisfy Step 3 (`To-Be Flow & Lifecycle Spec`) of the Planning Protocol:
    `node ~/.gemini/config/skills/archify/bin/archify.mjs deliver <type> <input.json> <output.html> --quality showcase --json && node ~/.gemini/config/skills/archify/bin/archify.mjs check <output.html> --json`
 5. **Static Image Assets**: For diagrams embedded in `README.md` or markdown documentation, export and update dark and light static image assets in `docs/architecture/assets/<name>.png` and `docs/architecture/assets/<name>.light.png`.
 
+### 1.2 Module Contracts & Design Registry (EGM)
+1. **Design Registry**: Approved technical design documents live in `docs/designs/` and are indexed in `docs/designs/SITEMAP.md`. In an execution session, follow the approved design's implementation plan and verify any impacted flows against Section 1.1.
+2. **Module Contract Invariant**: Every Gradle module maintains a machine-verifiable contract in its `README.md` (`Interface`, `Invariants`, `Side Effects`, `Verification`). Before modifying a module, inspect its `README.md`. Any change to public symbols, invariants, side effects, or dependencies must update that module's `README.md` (and parent blueprint if boundaries change) in the same changeset.
+
 ---
 
 ## 2. Module Map & Architectural Invariants
@@ -46,7 +50,7 @@ All agent verification must be performed using these verified-green commands:
 | Task / Purpose | Verified Command |
 |---|---|
 | Run all checks & tests | `GRADLE_RO_DEP_CACHE=/home/nero/.gradle/caches ./gradlew test --rerun-tasks --gradle-user-home=/tmp/gradle-ro-home --offline` |
-| Fast re-run of all module tests | `GRADLE_RO_DEP_CACHE=/home/nero/.gradle/caches ./gradlew :common:test :user:test :chat:test :app:test --rerun --gradle-user-home=/tmp/gradle-ro-home --offline` |
+| Fast re-run of all module tests | `GRADLE_RO_DEP_CACHE=/home/nero/.gradle/caches ./gradlew :common:test :user:test :chat:test :app:test :notification:test --rerun --gradle-user-home=/tmp/gradle-ro-home --offline` |
 | Run checks with cache | `GRADLE_RO_DEP_CACHE=/home/nero/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home --offline` |
 | List runnable tasks | `GRADLE_RO_DEP_CACHE=/home/nero/.gradle/caches ./gradlew tasks --all --gradle-user-home=/tmp/gradle-ro-home --offline --no-daemon` |
 
