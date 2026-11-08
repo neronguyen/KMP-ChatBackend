@@ -51,14 +51,14 @@ All agent verification must be performed using these verified-green commands:
 |---|---|---|
 | **Fast Inner-Loop Feedback** | Tier 1 (Iterative) | `./scripts/verify.sh fast` |
 | **Strict Clean Verification Gate** | Tier 2 (Pre-Commit / Gate) | `./scripts/verify.sh clean` |
-| Fast re-run of all module tests | Direct Gradle | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew :common:test :user:test :chat:test :app:test :notification:test --gradle-user-home=/tmp/gradle-ro-home --offline` |
-| List runnable tasks | Utility | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew tasks --all --gradle-user-home=/tmp/gradle-ro-home --offline --no-daemon` |
+| Fast re-run of all module checks | Direct Gradle | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home` |
+| List runnable tasks | Utility | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew tasks --all --gradle-user-home=/tmp/gradle-ro-home --no-daemon` |
 
 > [!IMPORTANT]
 > **Verification Tier Policy**:
 > - Agents may use **Tier 1 (`fast`)** for rapid iterative feedback during development loops.
 > - Agents **MUST** run and pass **Tier 2 (`clean`)** before committing any changes or flipping any flow spec from `[PLANNED]` to `[AS-IS]`.
 
-*Note: In sandboxed environments with daemon lock contention, using `--gradle-user-home=/tmp/gradle-ro-home` with `GRADLE_RO_DEP_CACHE` avoids lock collisions with host daemons. `./scripts/verify.sh` automatically manages symlinks and paths.*
+*Note: `./scripts/verify.sh` is the Single Source of Truth for both Local/Sandbox and GitHub Actions CI (`CI=true`). It resolves JDK 21+ via 3-tier discovery, manages `/tmp/gradle-ro-home` with `GRADLE_RO_DEP_CACHE` to avoid daemon lock collisions with host processes, and runs `check` across all modules (including unit tests, Konsist architectural rules, and OpenAPI freshness checks).*
 
 

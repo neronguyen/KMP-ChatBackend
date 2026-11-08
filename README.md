@@ -68,5 +68,5 @@ limiting, room/message persistence, real-time WebSocket sessions, and asynchrono
 ./scripts/verify.sh clean
 
 # Direct Gradle commands
-GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew test --gradle-user-home=/tmp/gradle-ro-home --offline
+GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home
 ```
