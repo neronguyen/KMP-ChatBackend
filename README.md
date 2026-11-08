@@ -61,9 +61,12 @@ limiting, room/message persistence, real-time WebSocket sessions, and asynchrono
 ## System Verification
 
 ```bash
-# Run all unit and integration tests across all modules
-GRADLE_RO_DEP_CACHE=/home/nero/.gradle/caches ./gradlew test --rerun-tasks --gradle-user-home=/tmp/gradle-ro-home --offline
+# Fast cached verification (Tier 1 - Inner loop)
+./scripts/verify.sh fast
 
-# Fast re-run of all module tests
-GRADLE_RO_DEP_CACHE=/home/nero/.gradle/caches ./gradlew :common:test :user:test :chat:test :app:test :notification:test --rerun --gradle-user-home=/tmp/gradle-ro-home --offline
+# Full clean verification gate (Tier 2 - Pre-commit)
+./scripts/verify.sh clean
+
+# Direct Gradle commands
+GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew test --gradle-user-home=/tmp/gradle-ro-home --offline
 ```

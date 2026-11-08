@@ -48,3 +48,4 @@ local.properties
 # Archify local delivery sidecars
 *.delivery.json
 *.delivery-*.json
+skills/
