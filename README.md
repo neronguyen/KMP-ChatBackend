@@ -40,8 +40,8 @@ limiting, room/message persistence, real-time WebSocket sessions, and asynchrono
 - [chat](./chat/README.md) - Chat rooms, messages, `/ws/chat` WebSocket handler, and Redis slice caching.
 - [notification](./notification/README.md) - Asynchronous SMTP email delivery triggered by RabbitMQ domain events.
 - [build-logic](./build-logic/README.md) - Convention plugin standardizing Kotlin 21 toolchains and dependencies.
-- [docs/architecture/flows](./docs/architecture/flows/README.md) - Backend-specific sequence and dataflow specifications.
-- [docs/designs](./docs/designs/SITEMAP.md) - Design document index.
+- [docs](./docs/README.md) - Unified C4 architecture, sequence/dataflow specifications, OpenAPI schema, and EGM
+  technical design registry.
 
 ## Global Invariants
 
