@@ -121,7 +121,29 @@ check_all() {
   local specs
   mapfile -t specs < <(find "${REPO_DIR}/docs/architecture/specifications" -name "*.archify.json" 2>/dev/null || true)
 
+  # Collect changed files in working tree or PR/commit diff
+  local changed_lookup=" "
+  while IFS= read -r f; do
+    [ -n "$f" ] && changed_lookup+="$f "
+  done < <(git -C "$REPO_DIR" status --porcelain 2>/dev/null | awk '{print $2}' || true)
+
+  if git -C "$REPO_DIR" rev-parse --verify origin/main >/dev/null 2>&1; then
+    while IFS= read -r f; do
+      [ -n "$f" ] && changed_lookup+="$f "
+    done < <(git -C "$REPO_DIR" diff --name-only origin/main...HEAD 2>/dev/null || true)
+  elif git -C "$REPO_DIR" rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+    while IFS= read -r f; do
+      [ -n "$f" ] && changed_lookup+="$f "
+    done < <(git -C "$REPO_DIR" diff --name-only HEAD~1...HEAD 2>/dev/null || true)
+  fi
+
   for spec in "${specs[@]}"; do
+    local rel_spec="${spec#$REPO_DIR/}"
+    local spec_in_diff=false
+    if [[ "$changed_lookup" =~ " $rel_spec " ]]; then
+      spec_in_diff=true
+    fi
+
     local rel_html
     rel_html="$(get_spec_output_html "$spec")"
     if [ -z "$rel_html" ]; then continue; fi
@@ -133,9 +155,15 @@ check_all() {
       continue
     fi
 
-    # Check timestamps with 1.0s grace period
+    # 1. Local mtime freshness
     if is_stale "$abs_html" "$spec"; then
       echo "  [STALE] HTML is older than spec: $(basename "$spec")"
+      ((stale_count++))
+    fi
+
+    # 2. Git diff parity: if spec is modified, HTML must also be updated
+    if [ "$spec_in_diff" = true ] && [[ ! "$changed_lookup" =~ " $rel_html " ]]; then
+      echo "  [STALE] Spec modified in diff but HTML not updated: $rel_html"
       ((stale_count++))
     fi
 
@@ -143,12 +171,19 @@ check_all() {
     assets="$(get_asset_names "$spec")"
     read -r dark_png light_png <<< "$assets"
     for img in "$dark_png" "$light_png"; do
-      local abs_img="${REPO_DIR}/docs/architecture/assets/${img}"
+      local rel_img="docs/architecture/assets/${img}"
+      local abs_img="${REPO_DIR}/${rel_img}"
       if [ ! -f "$abs_img" ]; then
-        echo "  [ERROR] Missing asset: docs/architecture/assets/${img}"
+        echo "  [ERROR] Missing asset: ${rel_img}"
         ((stale_count++))
       elif is_stale "$abs_img" "$spec"; then
-        echo "  [STALE] Asset is older than spec: docs/architecture/assets/${img}"
+        echo "  [STALE] Asset is older than spec: ${rel_img}"
+        ((stale_count++))
+      fi
+
+      # Git diff parity: if spec is modified, static assets must also be updated
+      if [ "$spec_in_diff" = true ] && [[ ! "$changed_lookup" =~ " $rel_img " ]]; then
+        echo "  [STALE] Spec modified in diff but asset not updated: ${rel_img}"
         ((stale_count++))
       fi
     done
