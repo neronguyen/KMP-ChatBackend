@@ -38,15 +38,18 @@ Before proposing any plan or writing code, read and follow:
 
 ## 3. Verified Development & Verification Commands
 
-| Task / Purpose | Tier | Verified Command |
-|---|---|---|
-| **Fast Inner-Loop Feedback** | Tier 1 (Iterative) | `./scripts/verify.sh fast` |
-| **Strict Clean Verification Gate** | Tier 2 (Pre-Commit / Gate) | `./scripts/verify.sh clean` |
-| Fast re-run of all module checks | Direct Gradle | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home` |
-| List runnable tasks | Utility | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew tasks --all --gradle-user-home=/tmp/gradle-ro-home --no-daemon` |
+| Task / Purpose                     | Tier                       | Verified Command                                                                                                           |
+|------------------------------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Fast Selective Feedback**        | Tier 1 (Iterative / Local) | `./scripts/verify.sh` *(Auto-detects modified modules via Git, reuses daemon & build cache)*                               |
+| **Selective Diagram Sync**         | Tier 1 (Architecture Doc)  | `./scripts/sync-archify.sh` *(Auto-detects modified .archify.json, delivers HTML, checks layout, exports dual-theme PNGs)* |
+| **Verify Diagram Freshness**       | CI / Pre-Push              | `./scripts/sync-archify.sh --check`                                                                                        |
+| **Strict Clean Verification Gate** | CI / Pre-Merge Gate        | `./scripts/verify.sh clean` *(Full rerun: check, CI enforces this)*                                                        |
+| Fast re-run of all module checks   | Direct Gradle              | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home`                        |
+| List runnable tasks                | Utility                    | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew tasks --all --gradle-user-home=/tmp/gradle-ro-home --no-daemon`      |
 
 > [!IMPORTANT]
 > **Verification Tier Policy**:
-> - Use **Tier 1 (`fast`)** for rapid iterative feedback during development loops.
-> - **MUST** run and pass **Tier 2 (`clean`)** before committing any changes or flipping any flow spec from `[PLANNED]`
-    to `[AS-IS]`.
+> - Use **Tier 1 (`./scripts/verify.sh` & `./scripts/sync-archify.sh`)** for rapid iterative feedback during development
+    loops. Test execution is automatically scoped to affected modules (~3-10s).
+> - **CI Gate (`.github/workflows/ci.yml`)** strictly enforces `./scripts/sync-archify.sh --check` and
+>   `./scripts/verify.sh clean` on every PR.
