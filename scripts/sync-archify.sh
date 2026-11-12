@@ -84,7 +84,7 @@ render_spec() {
   mkdir -p "$(dirname "$abs_html")"
 
   echo "==> [Archify] Delivering $spec_type: $spec -> $rel_html"
-  PATH="${HOME}/.local/bin:${PATH}" node "$ARCHIFY_CLI" deliver "$spec_type" "$spec" "$abs_html" --quality showcase --json >/dev/null
+  PATH="${HOME}/.local/bin:${PATH}" node "$ARCHIFY_CLI" deliver "$spec_type" "$spec" "$abs_html" --repo-root "$REPO_DIR" --quality showcase --json >/dev/null
 
   echo "==> [Archify] Checking layout: $rel_html"
   PATH="${HOME}/.local/bin:${PATH}" node "$ARCHIFY_CLI" check "$abs_html" --json >/dev/null
@@ -222,7 +222,7 @@ case "$ACTION" in
       # Detect changed archify.json files via git
       CHANGED_SPECS=()
       while IFS= read -r line; do
-        if [[ "$line" =~ \.archify\.json$ ]]; then
+        if [[ "$line" =~ \.archify\.json$ ]] && [ -f "${REPO_DIR}/${line}" ]; then
           CHANGED_SPECS+=("$line")
         fi
       done < <(git -C "$REPO_DIR" status --porcelain 2>/dev/null | awk '{print $2}' || true)
@@ -230,7 +230,7 @@ case "$ACTION" in
       # Check against main if working tree has no uncommitted archify specs
       if [ "${#CHANGED_SPECS[@]}" -eq 0 ]; then
         while IFS= read -r line; do
-          if [[ "$line" =~ \.archify\.json$ ]]; then
+          if [[ "$line" =~ \.archify\.json$ ]] && [ -f "${REPO_DIR}/${line}" ]; then
             CHANGED_SPECS+=("$line")
           fi
         done < <(git -C "$REPO_DIR" diff --name-only main...HEAD 2>/dev/null || true)

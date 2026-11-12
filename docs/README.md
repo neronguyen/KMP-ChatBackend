@@ -25,10 +25,9 @@ documents.
 Shared client–server wire flows (`ws-lifecycle`, `token-refresh`, `optimistic-send`) are maintained in the Contract SSOT
 registry: [`KMP-ChatContract/docs/README.md`](../../KMP-ChatContract/docs/README.md).
 
-| Flow                                             | Type       | Status      | Specification & Artifacts                                                      | Linked Design Spec | Asserting Test Suite                 |
-|--------------------------------------------------|------------|-------------|--------------------------------------------------------------------------------|--------------------|--------------------------------------|
-| ***RabbitMQ User & Chat Domain Event Pipeline*** | `dataflow` | `[PLANNED]` | `docs/architecture/specifications/flows/rabbitmq-events.dataflow.archify.json` | —                  | `:common:test`, `:notification:test` |
-| ***Distributed Rate Limiting via Redisson***     | `sequence` | `[PLANNED]` | `docs/architecture/specifications/flows/rate-limiting.sequence.archify.json`   | —                  | `:user:test`                         |
+| Flow                                  | Type | Status | Specification & Artifacts | Linked Design Spec | Asserting Test Suite |
+|---------------------------------------|------|--------|---------------------------|--------------------|----------------------|
+| *(No backend-only flow diagrams yet)* | —    | —      | —                         | —                  | —                    |
 
 ---
 
