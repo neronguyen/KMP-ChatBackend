@@ -33,6 +33,6 @@ registry: [`KMP-ChatContract/docs/README.md`](../../KMP-ChatContract/docs/README
 
 ## 3. Technical Design Documents (EGM)
 
-| Design Document                   | Date | Status | Target Modules | Linked Archify Specs | Summary                       |
-|-----------------------------------|------|--------|----------------|----------------------|-------------------------------|
-| *(No active feature designs yet)* | —    | —      | —              | —                    | Unified registry initialized. |
+| Design Document                                                                                                      | Date       | Status  | Target Modules           | Linked Archify Specs                                                                                                       | Summary                                                                              |
+|----------------------------------------------------------------------------------------------------------------------|------------|---------|--------------------------|----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [**6-Digit OTP Email Verification & Password Reset**](../../KMP-ChatContract/docs/designs/otp-email-verification.md) | 2026-11-12 | `Draft` | `:user`, `:notification` | [Contract Flow Spec](../../KMP-ChatContract/docs/architecture/specifications/flows/otp-verification.sequence.archify.json) | Cross-repo migration from email deep links to 6-digit OTP backed purely by Redisson. |

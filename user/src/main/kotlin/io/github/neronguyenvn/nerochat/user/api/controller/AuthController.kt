@@ -15,8 +15,12 @@ import io.github.neronguyenvn.nerochat.contract.auth.LoginRequest
 import io.github.neronguyenvn.nerochat.contract.auth.RefreshTokenRequest
 import io.github.neronguyenvn.nerochat.contract.auth.RegisterRequest
 import io.github.neronguyenvn.nerochat.contract.auth.ResetPasswordRequest
+import io.github.neronguyenvn.nerochat.contract.auth.VerifyEmailRequest
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidOtpException
+import io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
@@ -29,11 +33,9 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -158,18 +160,27 @@ class AuthController(
     }
 
     /**
-     * Consumes the supplied token and marks its user's email as verified.
+     * Consumes the supplied 6-digit OTP code and marks its user's email as verified.
      * Errors from [EmailVerificationService.verifyEmail] propagate.
      */
-    // TODO: Keep authentication tokens out of request URLs.
-    @Operation(summary = "Verify email", description = "Verifies email address using verification token")
-    @GetMapping("/verify-email")
-    @ApiErrors(AuthServerError.InvalidToken::class)
-    @Throws(InvalidTokenException::class)
+    @Operation(summary = "Verify email", description = "Verifies email address using 6-digit OTP")
+    @PostMapping("/verify-email")
+    @IpRateLimiting
+    @ApiErrors(
+        AuthServerError.InvalidCode::class,
+        AuthServerError.CodeExpired::class,
+        AuthServerError.MaxAttemptsExceeded::class,
+        CommonServerError.RateLimitExceeded::class,
+        CommonServerError.ValidationFailed::class,
+    )
+    @Throws(InvalidOtpException::class, OtpExpiredException::class, MaxAttemptsExceededException::class)
     fun verifyEmail(
-        @RequestParam token: String
+        @Valid @RequestBody body: VerifyEmailRequest
     ) {
-        emailVerificationService.verifyEmail(token)
+        emailVerificationService.verifyEmail(
+            email = body.email,
+            code = body.code
+        )
     }
 
     /**
@@ -197,24 +208,32 @@ class AuthController(
     }
 
     /**
-     * Resets the password and consumes the supplied token, revoking the user's refresh tokens.
+     * Resets the password and consumes the supplied 6-digit OTP, revoking the user's refresh tokens.
      * Errors from [PasswordResetService.resetPassword] propagate.
      */
-    @Operation(summary = "Reset password", description = "Resets password using reset token")
+    @Operation(summary = "Reset password", description = "Resets password using 6-digit OTP")
     @PostMapping("/reset-password")
     @IpRateLimiting
     @ApiErrors(
-        AuthServerError.InvalidToken::class,
+        AuthServerError.InvalidCode::class,
+        AuthServerError.CodeExpired::class,
+        AuthServerError.MaxAttemptsExceeded::class,
         AuthServerError.SamePassword::class,
         CommonServerError.RateLimitExceeded::class,
         CommonServerError.ValidationFailed::class,
     )
-    @Throws(InvalidTokenException::class, SamePasswordException::class)
+    @Throws(
+        InvalidOtpException::class,
+        OtpExpiredException::class,
+        MaxAttemptsExceededException::class,
+        SamePasswordException::class
+    )
     fun resetPassword(
         @Valid @RequestBody body: ResetPasswordRequest
     ) {
         passwordResetService.resetPassword(
-            token = body.token,
+            email = body.email,
+            code = body.code,
             newPassword = body.newPassword
         )
     }

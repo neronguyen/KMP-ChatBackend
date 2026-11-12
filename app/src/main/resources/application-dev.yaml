@@ -10,9 +10,6 @@ spring:
 jwt:
   expiration-minutes: 240
 
-email:
-  url: "http://localhost:8080"
-
 trusted-proxy:
   require-proxy: false
 

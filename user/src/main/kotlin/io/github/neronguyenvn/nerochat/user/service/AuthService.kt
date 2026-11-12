@@ -62,13 +62,13 @@ class AuthService(
             )
         )
 
-        val token = emailVerificationService.createVerificationToken(normalizedEmail)
+        val otpCode = emailVerificationService.createVerificationOtp(normalizedEmail)
         eventPublisher.publish(
             event = UserEvent.Created(
                 userId = saved.userId,
                 email = saved.email,
                 displayName = displayName,
-                verificationToken = token.token
+                otpCode = otpCode
             )
         )
 

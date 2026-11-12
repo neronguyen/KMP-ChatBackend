@@ -22,22 +22,21 @@ class NotificationUserEventListener(
                 userId = event.userId,
                 email = event.email,
                 displayName = event.displayName,
-                token = event.verificationToken
+                otpCode = event.otpCode
             )
 
             is UserEvent.RequestResendVerification -> emailService.sendVerificationEmail(
                 userId = event.userId,
                 email = event.email,
                 displayName = event.displayName,
-                token = event.verificationToken
+                otpCode = event.otpCode
             )
 
             is UserEvent.RequestResetPassword -> emailService.sendPasswordResetEmail(
                 userId = event.userId,
                 email = event.email,
                 displayName = event.displayName,
-                token = event.passwordResetToken,
-                expiresIn = event.expiresIn
+                otpCode = event.otpCode
             )
 
             is UserEvent.Verified -> Unit

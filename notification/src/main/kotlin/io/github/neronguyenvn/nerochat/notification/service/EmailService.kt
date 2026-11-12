@@ -7,9 +7,6 @@ import org.springframework.mail.MailException
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
-import kotlin.time.Duration
 
 @Service
 class EmailService(
@@ -17,33 +14,27 @@ class EmailService(
     private val templateService: EmailTemplateService,
     @param:Value($$"${email.from}")
     private val emailFrom: String,
-    @param:Value($$"${email.url}")
-    private val baseUrl: String,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Renders and sends a personalized verification email containing [token] in the verification URL.
+     * Renders and sends a personalized verification email containing a 6-digit numeric [otpCode].
      * [userId] identifies the user in logs; [email] is the delivery address.
-     * URL construction, template rendering, message preparation, and sending errors propagate.
+     * Template rendering, message preparation, and sending errors propagate.
      */
-    // TODO: Keep authentication tokens out of request URLs.
     fun sendVerificationEmail(
         userId: UserId,
         email: String,
         displayName: String,
-        token: String
+        otpCode: String
     ) {
         logger.info("Sending verification email for user $userId")
-
-        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
-        val verificationUrl = "$baseUrl/api/auth/verify-email?token=$encodedToken"
 
         val htmlContent = templateService.processTemplate(
             templateName = "emails/account-verification",
             variables = mapOf(
                 "displayName" to displayName,
-                "verificationUrl" to verificationUrl
+                "otpCode" to otpCode
             )
         )
 
@@ -55,29 +46,23 @@ class EmailService(
     }
 
     /**
-     * Renders and sends a personalized password-reset email containing [token] in the reset URL.
-     * Displays [expiresIn] in whole minutes and uses [userId] for logging.
-     * URL construction, template rendering, message preparation, and sending errors propagate.
+     * Renders and sends a personalized password-reset email containing a 6-digit numeric [otpCode].
+     * [userId] identifies the user in logs; [email] is the delivery address.
+     * Template rendering, message preparation, and sending errors propagate.
      */
-    // TODO: Keep authentication tokens out of request URLs.
     fun sendPasswordResetEmail(
         userId: UserId,
         email: String,
         displayName: String,
-        token: String,
-        expiresIn: Duration
+        otpCode: String
     ) {
         logger.info("Sending password reset email for user $userId")
-
-        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
-        val resetPasswordUrl = "$baseUrl/api/auth/reset-password?token=$encodedToken"
 
         val htmlContent = templateService.processTemplate(
             templateName = "emails/reset-password",
             variables = mapOf(
                 "displayName" to displayName,
-                "resetPasswordUrl" to resetPasswordUrl,
-                "expiresInMinutes" to expiresIn.inWholeMinutes
+                "otpCode" to otpCode
             )
         )
 
