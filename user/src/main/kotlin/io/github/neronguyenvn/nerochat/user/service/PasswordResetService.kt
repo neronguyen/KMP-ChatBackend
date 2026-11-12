@@ -1,111 +1,91 @@
 package io.github.neronguyenvn.nerochat.user.service
 
 import io.github.neronguyenvn.nerochat.domain.event.UserEvent
-import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.domain.util.normalizeEmail
 import io.github.neronguyenvn.nerochat.infra.messagequeue.EventPublisher
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
 import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordException
-import io.github.neronguyenvn.nerochat.user.domain.model.AuthTokenType
-import io.github.neronguyenvn.nerochat.user.infra.database.model.AuthTokenEntity
 import io.github.neronguyenvn.nerochat.user.infra.database.model.userId
-import io.github.neronguyenvn.nerochat.user.infra.database.repository.AuthTokenRepository
 import io.github.neronguyenvn.nerochat.user.infra.database.repository.RefreshTokenRepository
 import io.github.neronguyenvn.nerochat.user.infra.database.repository.UserRepository
-import io.github.neronguyenvn.nerochat.user.infra.security.SecureTokenGenerator
 import jakarta.transaction.Transactional
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 @Service
 class PasswordResetService(
-    private val authTokenRepository: AuthTokenRepository,
+    private val otpService: RedissonOtpService,
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val passwordEncoder: PasswordEncoder,
     private val eventPublisher: EventPublisher,
-    @param:Value($$"${email.password-reset.expiry-minutes}") private val expiryMinutes: Long
 ) {
     /**
-     * Invalidates earlier password-reset tokens, saves a new expiring token, and attempts to publish a reset request.
+     * Generates a new 6-digit password-reset OTP in Redis and publishes a reset request.
      * Synchronous event-publishing failures propagate to the caller.
      *
      * @throws UserNotFoundException if no user is registered with [email].
      */
-    @Transactional
-    fun requestPasswordReset(email: String){
-        val user = userRepository.findByEmail(normalizeEmail(email))
+    fun requestPasswordReset(email: String) {
+        val normalizedEmail = normalizeEmail(email)
+        val user = userRepository.findByEmail(normalizedEmail)
             ?: throw UserNotFoundException.byEmail()
 
-        authTokenRepository.invalidatePasswordResetTokens(user)
-
-        val expiryDate = Instant.now().plus(expiryMinutes, ChronoUnit.MINUTES)
-        // TODO: Simplify token param
-        val token = AuthTokenEntity(
-            token = SecureTokenGenerator.generate(),
-            expiredAt = expiryDate,
-            tokenType = AuthTokenType.PasswordReset,
-            user = user
-        )
-        authTokenRepository.save(token)
+        val otpCode = otpService.generateAndStoreOtp(OtpType.RESET, normalizedEmail) ?: return
 
         eventPublisher.publish(
             event = UserEvent.RequestResetPassword(
                 userId = user.userId,
                 email = user.email,
                 displayName = user.displayName,
-                passwordResetToken = token.token,
-                expiresIn = expiryMinutes.toDuration(DurationUnit.MINUTES)
+                otpCode = otpCode,
+                expiresIn = 3.toDuration(DurationUnit.MINUTES)
             )
         )
     }
 
     /**
-     * Replaces the user's encoded password, deletes all their refresh tokens, and consumes [token].
+     * Verifies the 6-digit OTP first, checks that [newPassword] is different from current password,
+     * replaces the user's encoded password, deletes all their refresh tokens, and deletes the OTP.
      * Existing access tokens are not revoked.
      *
-     * @throws InvalidTokenException if the token is missing, has the wrong type, is used, or is expired.
+     * @throws io.github.neronguyenvn.nerochat.user.domain.exception.InvalidOtpException if the OTP is incorrect.
+     * @throws io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException if the OTP is expired or missing.
+     * @throws io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException if max attempts exceeded or locked out.
+     * @throws UserNotFoundException if the user does not exist.
      * @throws SamePasswordException if [newPassword] matches the stored password.
      */
     @Transactional
-    fun resetPassword(token: String, newPassword: String) {
-        val existingToken = authTokenRepository.findByIdOrNull(token)
-            ?: throw InvalidTokenException("Password reset token is invalid")
+    fun resetPassword(email: String, code: String, newPassword: String) {
+        val normalizedEmail = normalizeEmail(email)
 
-        if (existingToken.tokenType != AuthTokenType.PasswordReset) {
-            throw InvalidTokenException("Password reset token is invalid")
-        }
+        // 1. Verify OTP first (prevents password oracle vulnerability)
+        otpService.verifyOtp(OtpType.RESET, normalizedEmail, code)
 
-        if (existingToken.isUsed()) {
-            throw InvalidTokenException("Password reset token is already used")
-        }
+        // 2. Fetch user
+        val user = userRepository.findByEmail(normalizedEmail)
+            ?: throw UserNotFoundException.byEmail()
 
-        if (existingToken.isExpired()) {
-            throw InvalidTokenException("Password reset token is expired")
-        }
-
-        val user = existingToken.user
-
+        // 3. Semantic check: reject if new password matches existing password
         if (passwordEncoder.matches(newPassword, user.hashedPassword)) {
             throw SamePasswordException()
         }
 
+        // 4. Invalidate all active refresh tokens for user across all sessions
         refreshTokenRepository.deleteByUserId(user.userId.asUUID())
 
+        // 5. Update user password
         val newHashedPassword = passwordEncoder.encode(newPassword)!!
         user.hashedPassword = newHashedPassword
         userRepository.save(user)
 
-        existingToken.usedAt = Instant.now()
-        authTokenRepository.save(existingToken)
+        // 6. Delete Redis OTP keys upon successful commit
+        otpService.deleteOtp(OtpType.RESET, normalizedEmail)
     }
 
     /**

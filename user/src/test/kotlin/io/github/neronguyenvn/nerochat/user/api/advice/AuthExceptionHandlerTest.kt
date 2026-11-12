@@ -4,6 +4,9 @@ import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidOtpException
+import io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
@@ -11,11 +14,47 @@ import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordExcept
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 
 class AuthExceptionHandlerTest {
 
     private val handler = AuthExceptionHandler()
+
+    @Test
+    fun `onInvalidOtp returns 400 and INVALID_CODE error`() {
+        val ex = InvalidOtpException()
+        val response = handler.onInvalidOtp(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(AuthServerError.InvalidCode.code, response.body?.error)
+        assertEquals(ex.message, response.body?.message)
+    }
+
+    @Test
+    fun `onOtpExpired returns 400 and CODE_EXPIRED error`() {
+        val ex = OtpExpiredException()
+        val response = handler.onOtpExpired(ex)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals(AuthServerError.CodeExpired.code, response.body?.error)
+        assertEquals(ex.message, response.body?.message)
+    }
+
+    @Test
+    fun `onMaxAttemptsExceeded returns 429 and MAX_ATTEMPTS_EXCEEDED error with Retry-After header`() {
+        val ex = MaxAttemptsExceededException(retryAfterSeconds = 300L)
+        val response = handler.onMaxAttemptsExceeded(ex)
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.statusCode)
+        assertEquals("300", response.headers.getFirst(HttpHeaders.RETRY_AFTER))
+        assertNotNull(response.body)
+        assertEquals(AuthServerError.MaxAttemptsExceeded.code, response.body?.error)
+        assertEquals(300L, response.body?.retryAfterSeconds)
+        assertEquals(ex.message, response.body?.message)
+    }
 
     @Test
     fun `onInvalidToken returns 401 and INVALID_TOKEN error`() {

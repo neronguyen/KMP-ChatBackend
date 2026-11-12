@@ -90,12 +90,11 @@ spring:
 jwt:
   secret: ${JWT_SECRET_BASE64}
 
+otp:
+  pepper: ${OTP_PEPPER}
+
 email:
   from: ${SMTP_SENDER}
-  verification:
-    expiry-hours: 24
-  password-reset:
-    expiry-minutes: 15
 
 trusted-proxy:
   trusted-ips:

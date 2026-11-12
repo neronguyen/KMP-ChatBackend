@@ -5,12 +5,16 @@ import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.user.domain.exception.EmailNotVerifiedException
 import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidCredentialsException
+import io.github.neronguyenvn.nerochat.user.domain.exception.InvalidOtpException
+import io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException
+import io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException
 import io.github.neronguyenvn.nerochat.user.domain.exception.SamePasswordException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserAlreadyExistsException
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
 import io.github.neronguyenvn.nerochat.user.domain.exception.WrongPasswordException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -19,6 +23,39 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class AuthExceptionHandler {
+
+    @ExceptionHandler(InvalidOtpException::class)
+    fun onInvalidOtp(e: InvalidOtpException): ResponseEntity<ApiErrorDto> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiErrorDto(
+                error = AuthServerError.InvalidCode,
+                message = e.message,
+            )
+        )
+
+    @ExceptionHandler(OtpExpiredException::class)
+    fun onOtpExpired(e: OtpExpiredException): ResponseEntity<ApiErrorDto> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiErrorDto(
+                error = AuthServerError.CodeExpired,
+                message = e.message,
+            )
+        )
+
+    @ExceptionHandler(MaxAttemptsExceededException::class)
+    fun onMaxAttemptsExceeded(e: MaxAttemptsExceededException): ResponseEntity<ApiErrorDto> {
+        val builder = ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        if (e.retryAfterSeconds != null) {
+            builder.header(HttpHeaders.RETRY_AFTER, e.retryAfterSeconds.toString())
+        }
+        return builder.body(
+            ApiErrorDto(
+                error = AuthServerError.MaxAttemptsExceeded,
+                message = e.message,
+                retryAfterSeconds = e.retryAfterSeconds,
+            )
+        )
+    }
 
     @ExceptionHandler(InvalidTokenException::class)
     fun onInvalidToken(e: InvalidTokenException): ResponseEntity<ApiErrorDto> =

@@ -16,7 +16,7 @@ sealed class UserEvent : Event() {
         val userId: UserId,
         val email: String,
         val displayName: String,
-        val verificationToken: String,
+        val otpCode: String,
         override val key: String = CREATED_KEY,
     ) : UserEvent()
 
@@ -35,7 +35,7 @@ sealed class UserEvent : Event() {
         val userId: UserId,
         val email: String,
         val displayName: String,
-        val verificationToken: String,
+        val otpCode: String,
         override val key: String = REQUEST_RESEND_VERIFICATION_KEY,
     ) : UserEvent()
 
@@ -45,7 +45,7 @@ sealed class UserEvent : Event() {
         val userId: UserId,
         val email: String,
         val displayName: String,
-        val passwordResetToken: String,
+        val otpCode: String,
         val expiresIn: Duration,
         override val key: String = REQUEST_RESET_PASSWORD_KEY,
     ) : UserEvent()

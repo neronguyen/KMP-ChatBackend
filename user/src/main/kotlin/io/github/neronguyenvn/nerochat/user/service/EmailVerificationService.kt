@@ -1,110 +1,69 @@
 package io.github.neronguyenvn.nerochat.user.service
 
 import io.github.neronguyenvn.nerochat.domain.event.UserEvent
-import io.github.neronguyenvn.nerochat.domain.exception.InvalidTokenException
 import io.github.neronguyenvn.nerochat.domain.util.normalizeEmail
 import io.github.neronguyenvn.nerochat.infra.messagequeue.EventPublisher
 import io.github.neronguyenvn.nerochat.user.domain.exception.UserNotFoundException
-import io.github.neronguyenvn.nerochat.user.domain.model.AuthToken
-import io.github.neronguyenvn.nerochat.user.domain.model.AuthTokenType
-import io.github.neronguyenvn.nerochat.user.infra.database.model.AuthTokenEntity
-import io.github.neronguyenvn.nerochat.user.infra.database.model.asEmailVerificationToken
 import io.github.neronguyenvn.nerochat.user.infra.database.model.userId
-import io.github.neronguyenvn.nerochat.user.infra.database.repository.AuthTokenRepository
 import io.github.neronguyenvn.nerochat.user.infra.database.repository.UserRepository
-import io.github.neronguyenvn.nerochat.user.infra.security.SecureTokenGenerator
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 @Service
 class EmailVerificationService(
-    private val authTokenRepository: AuthTokenRepository,
+    private val otpService: RedissonOtpService,
     private val userRepository: UserRepository,
     private val eventPublisher: EventPublisher,
-    @param:Value($$"${email.verification.expiry-hours}") private val expiryHours: Long
 ) {
     /**
-     * Marks the user's existing verification tokens as used and saves a new token with the
-     * configured lifetime in hours. This also applies to users whose email is already verified.
-     *
-     * @return the saved token and its user.
-     * @throws UserNotFoundException if no user is registered with [email].
+     * Generates a 6-digit verification OTP and stores it in Redis.
+     * Used during registration.
      */
-    @Transactional
-    fun createVerificationToken(email: String): AuthToken.EmailVerification {
-        val user = userRepository.findByEmail(normalizeEmail(email))
-            ?: throw UserNotFoundException.byEmail()
-
-        authTokenRepository.invalidateEmailVerificationTokens(user)
-
-        val expiryDate = Instant.now().plus(expiryHours, ChronoUnit.HOURS)
-
-        val token = AuthTokenEntity(
-            token = SecureTokenGenerator.generate(),
-            expiredAt = expiryDate,
-            tokenType = AuthTokenType.EmailVerification,
-            user = user
-        )
-
-        return authTokenRepository.save(token).asEmailVerificationToken()
+    fun createVerificationOtp(email: String): String {
+        val normalizedEmail = normalizeEmail(email)
+        return otpService.generateAndStoreOtp(OtpType.VERIFY, normalizedEmail)
+            ?: error("Cannot generate verification OTP: account is locked out")
     }
 
     /**
-     * Replaces existing verification tokens and publishes a resend request for an unverified user.
-     * A new token is also created for an already verified user, but no event is published.
-     * Synchronous event-publishing failures propagate to the caller.
-     *
-     * @throws UserNotFoundException if no user is registered with [email].
+     * Generates a new verification OTP and publishes a resend request for an unverified user.
+     * If user is already verified or under lockout, no event is published (anti-enumeration).
      */
-    @Transactional
     fun resendVerificationEmail(email: String) {
-        val token = createVerificationToken(email)
-        if (token.user.isEmailVerified) {
+        val normalizedEmail = normalizeEmail(email)
+        val user = userRepository.findByEmail(normalizedEmail) ?: return
+        if (user.isEmailVerified) {
             return
         }
 
+        val otpCode = otpService.generateAndStoreOtp(OtpType.VERIFY, normalizedEmail) ?: return
         eventPublisher.publish(
             event = UserEvent.RequestResendVerification(
-                userId = token.user.id,
-                email = token.user.email,
-                displayName = token.user.displayName,
-                verificationToken = token.token
+                userId = user.userId,
+                email = user.email,
+                displayName = user.displayName,
+                otpCode = otpCode
             )
         )
     }
 
     /**
-     * Marks a verification token as used and its user's email as verified.
+     * Verifies the 6-digit OTP in Redis and marks the user's email as verified in PostgreSQL.
      *
-     * @throws InvalidTokenException if the token is missing, has the wrong type, is used, or is expired.
+     * @throws io.github.neronguyenvn.nerochat.user.domain.exception.InvalidOtpException on invalid code
+     * @throws io.github.neronguyenvn.nerochat.user.domain.exception.OtpExpiredException on expired code
+     * @throws io.github.neronguyenvn.nerochat.user.domain.exception.MaxAttemptsExceededException on max attempts or lockout
+     * @throws UserNotFoundException if no user is found with [email]
      */
     @Transactional
-    fun verifyEmail(token: String) {
-        val existing = authTokenRepository.findByIdOrNull(token)
-            ?: throw InvalidTokenException("Email verification token is invalid")
+    fun verifyEmail(email: String, code: String) {
+        val normalizedEmail = normalizeEmail(email)
+        otpService.verifyOtp(OtpType.VERIFY, normalizedEmail, code)
 
-        if (existing.tokenType != AuthTokenType.EmailVerification) {
-            throw InvalidTokenException("Email verification token is invalid")
-        }
+        val user = userRepository.findByEmail(normalizedEmail)
+            ?: throw UserNotFoundException.byEmail()
 
-        if (existing.isUsed()) {
-            throw InvalidTokenException("Email verification token is already used")
-        }
-
-        if (existing.isExpired()) {
-            throw InvalidTokenException("Email verification token is expired")
-        }
-
-        val now = Instant.now()
-        existing.usedAt = now
-        val user = existing.user
         user.isEmailVerified = true
-
-        authTokenRepository.save(existing)
         userRepository.save(user)
 
         eventPublisher.publish(
@@ -114,5 +73,7 @@ class EmailVerificationService(
                 displayName = user.displayName
             )
         )
+
+        otpService.deleteOtp(OtpType.VERIFY, normalizedEmail)
     }
 }
