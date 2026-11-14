@@ -23,4 +23,6 @@ Spring Boot application bootstrap, root composition container, global security f
 - Exports `docs/openapi.json` and `docs/nerochat.postman_collection.json`.
 
 ## Verification
-- Run: `./gradlew :app:test --rerun-tasks`
+- Run all `:app` unit, Golden Wire parity (`BackendGoldenWireTest`), and container-backed integration tests (skipped automatically if Docker is unavailable): `./gradlew :app:test --rerun-tasks`
+- Run only Testcontainers integration tests (`PostgreSQL`, `Redis`, `RabbitMQ` tagged `@Tag("integration")`): `./gradlew :app:integrationTest --rerun-tasks`
+- Full clean verification gate across all modules: `./scripts/verify.sh clean`

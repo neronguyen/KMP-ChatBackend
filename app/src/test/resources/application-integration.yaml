@@ -1,0 +1,34 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+  rabbitmq:
+    ssl:
+      enabled: false
+
+jwt:
+  secret: dGVzdC1qd3Qtc2VjcmV0LWtleS1mb3ItdW5pdC10ZXN0aW5nLXB1cnBvc2VzLW9ubHk=
+  expiration-minutes: 15
+
+otp:
+  pepper: integration-test-otp-pepper
+
+email:
+  from: noreply@nerochat.test
+
+rate-limit:
+  ip:
+    apply-limit: false
+
+trusted-proxy:
+  require-proxy: false
+  trusted-ips:
+    - "127.0.0.1/32"
+    - "::1/128"

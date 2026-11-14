@@ -51,9 +51,15 @@ springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openap
 swagger-annotations-jakarta = { module = "io.swagger.core.v3:swagger-annotations-jakarta", version = "2.2.55" }
 
 # Testing
+awaitility-kotlin = { module = "org.awaitility:awaitility-kotlin" }
 h2 = { module = "com.h2database:h2" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+testcontainers = { module = "org.testcontainers:testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+testcontainers-rabbitmq = { module = "org.testcontainers:testcontainers-rabbitmq" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

@@ -28,6 +28,15 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.mail)
+    testImplementation(libs.spring.boot.starter.data.jpa)
+    testImplementation(libs.spring.boot.starter.amqp)
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.rabbitmq)
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.konsist)
     testRuntimeOnly(libs.h2)
     testRuntimeOnly(libs.junit.platform.launcher)
@@ -40,6 +49,17 @@ kotlin {
 tasks.test {
     useJUnitPlatform {
         excludeTags("export")
+    }
+    systemProperty("project.rootDir", rootProject.projectDir.absolutePath)
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs Testcontainers-backed integration tests."
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform {
+        includeTags("integration")
     }
     systemProperty("project.rootDir", rootProject.projectDir.absolutePath)
 }
