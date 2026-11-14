@@ -12,14 +12,10 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.atLeastOnce
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.Duration
-import java.util.Properties
-import java.util.UUID
+import java.util.*
 
 class UserEventAmqpIntegrationTest : AbstractContainerIntegrationTest() {
 
@@ -47,7 +43,9 @@ class UserEventAmqpIntegrationTest : AbstractContainerIntegrationTest() {
 
         await atMost Duration.ofSeconds(15) untilAsserted {
             val eventCaptor = ArgumentCaptor.forClass(UserEvent::class.java)
-            verify(notificationUserEventListener, atLeastOnce()).handleUserEvent(eventCaptor.capture())
+            verify(notificationUserEventListener, atLeastOnce()).handleUserEvent(
+                eventCaptor.capture() ?: UserEvent.Created(registeredUser.id, email, displayName, "000000")
+            )
 
             val matchingEvent = eventCaptor.allValues
                 .filterIsInstance<UserEvent.Created>()

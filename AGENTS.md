@@ -29,7 +29,10 @@ Before proposing any plan or writing code, read and follow:
 ### 2.2 Boundary Invariants & Hard Rules
 1. **Domain Module Isolation**: Peer domain modules (`:user`, `:chat`, `:notification`) must **never** depend on or import each other. Cross-module communication is asynchronous via RabbitMQ domain events (`UserEvent`, `ChatEvent`).
 2. **Service Layer Purity**: Service classes must return domain entities/models (not wire DTOs) and throw domain exceptions (never Spring Web `ResponseStatusException`). Mappings to wire DTOs occur at the `@RestController` layer.
-3. **Contract SSOT**: Never hand-write duplicate wire DTOs, request/response models, or error classes. All wire types must derive from `io.github.neronguyenvn.nerochat.contract.*`.
+3. **Contract SSOT**: Never hand-write duplicate wire DTOs, request/response models, or error classes. All wire types
+   must derive from `io.github.neronguyenvn.nerochat.contract.*`. Likewise, do not duplicate standalone DTO or
+   `ErrorCode` golden wire serialization tests—`KMP-ChatContract` owns pure contract wire-format tests; backend wire
+   tests (`BackendGoldenWireTest`) must strictly verify Spring MVC / WebSocket / `ContractJson` bean wiring.
 4. **Error Handling Architecture**: Controller advices (`CommonExceptionHandler`, `AuthExceptionHandler`, `ChatExceptionHandler`) must construct `ApiErrorDto(error = <ServerError>, ...)` using flat `ErrorCode` strings.
 5. **Anti-Enumeration Flows**: `POST /api/auth/resend-verification` and `POST /api/auth/forgot-password` return `204 No Content` and never return domain `AuthServerError` codes to prevent user enumeration.
 6. **WebSocket Protocol**: `/ws/chat` uses raw Spring `TextWebSocketHandler` with `kotlinx.serialization` text frames (`classDiscriminator = "type"`); sessions must be wrapped in `ConcurrentWebSocketSessionDecorator`.

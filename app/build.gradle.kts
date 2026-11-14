@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.websocket)
     testImplementation(libs.spring.boot.starter.mail)
     testImplementation(libs.spring.boot.starter.data.jpa)
     testImplementation(libs.spring.boot.starter.amqp)

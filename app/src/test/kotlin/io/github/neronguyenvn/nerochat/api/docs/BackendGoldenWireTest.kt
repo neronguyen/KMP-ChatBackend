@@ -10,6 +10,8 @@ import io.github.neronguyenvn.nerochat.chat.api.advice.ChatExceptionHandler
 import io.github.neronguyenvn.nerochat.chat.api.controller.ChatMessageController
 import io.github.neronguyenvn.nerochat.chat.api.controller.ChatParticipantController
 import io.github.neronguyenvn.nerochat.chat.api.controller.ChatRoomController
+import io.github.neronguyenvn.nerochat.chat.api.websocket.ChatWebSocketHandler
+import io.github.neronguyenvn.nerochat.chat.api.websocket.WebSocketConfig
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
@@ -17,19 +19,7 @@ import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatParticipantService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
 import io.github.neronguyenvn.nerochat.contract.ContractJson
-import io.github.neronguyenvn.nerochat.contract.auth.AuthenticatedUserDto
-import io.github.neronguyenvn.nerochat.contract.auth.UserDto
-import io.github.neronguyenvn.nerochat.contract.auth.error.AuthServerError
-import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageDto
-import io.github.neronguyenvn.nerochat.contract.chat.ChatMessageSliceDto
-import io.github.neronguyenvn.nerochat.contract.chat.ChatParticipantDto
-import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomDto
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
-import io.github.neronguyenvn.nerochat.contract.chat.WsClientMessage
-import io.github.neronguyenvn.nerochat.contract.chat.WsServerEvent
-import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
-import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
-import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -50,10 +40,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.doThrow
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.`when`
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.*
 import org.redisson.api.RedissonClient
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
@@ -61,16 +49,18 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
+import org.springframework.web.socket.CloseStatus
+import org.springframework.web.socket.TextMessage
+import org.springframework.web.socket.WebSocketSession
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -92,6 +82,8 @@ class BackendGoldenWireTest {
         ChatRoomController::class,
         ChatParticipantController::class,
         ChatMessageController::class,
+        WebSocketConfig::class,
+        ChatWebSocketHandler::class,
     )
     class TestConfig {
         @Bean fun authService(): AuthService = mock(AuthService::class.java)
@@ -123,21 +115,26 @@ class BackendGoldenWireTest {
     private lateinit var chatRoomService: ChatRoomService
 
     @Autowired
+    private lateinit var chatMessageService: ChatMessageService
+
+    @Autowired
+    private lateinit var chatWebSocketHandler: ChatWebSocketHandler
+
+    @Autowired
     private lateinit var jwtService: JwtService
 
     private lateinit var mockMvc: MockMvc
-    private val json = ContractJson
 
     private val aliceId = "018f3a2b-8a7e-7000-8000-000000000001"
     private val bobId = "018f3a2b-8a7e-7000-8000-000000000002"
     private val roomId = "018f3a2b-8a7e-7000-8000-000000000020"
+    private val missingRoomId = "018f3a2b-8a7e-7000-8000-000000000099"
     private val messageId = "018f3a2b-8a7e-7000-8000-000000000010"
-    private val clientTempMessageId = "018f3a2b-8a7e-7000-8000-000000000099"
     private val fixedInstant = Instant.parse("2026-11-03T20:00:00Z")
 
     @BeforeEach
     fun setUp() {
-        reset(authService, emailVerificationService, chatRoomService, jwtService)
+        reset(authService, emailVerificationService, chatRoomService, chatMessageService, jwtService)
         val springSecurityFilterChain = wac.getBean("springSecurityFilterChain", Filter::class.java)
         mockMvc = MockMvcBuilders.webAppContextSetup(wac)
             .addFilter<DefaultMockMvcBuilder>(springSecurityFilterChain)
@@ -147,268 +144,6 @@ class BackendGoldenWireTest {
     @Test
     fun `Spring Context uses ContractJson singleton`() {
         assertSame(ContractJson, configuredJson)
-    }
-
-    @Test
-    fun `ApiErrorDto golden wire parity for CommonServerError and AuthServerError`() {
-        val badRequest = ApiErrorDto(
-            error = CommonServerError.BadRequest,
-            message = "Invalid request",
-        )
-        val expectedBadRequest =
-            """{"error":"CommonServerError.BadRequest","message":"Invalid request","fieldErrors":{}}"""
-        assertEquals(expectedBadRequest, json.encodeToString(badRequest))
-        assertEquals(badRequest, json.decodeFromString<ApiErrorDto>(expectedBadRequest))
-
-        val validationFailed = ApiErrorDto(
-            error = CommonServerError.ValidationFailed,
-            message = "Validation failed",
-            fieldErrors = mapOf("email" to "Invalid email format"),
-            retryAfterSeconds = 60L,
-        )
-        val expectedValidationFailed =
-            """{"error":"CommonServerError.ValidationFailed","message":"Validation failed","fieldErrors":{"email":"Invalid email format"},"retryAfterSeconds":60}"""
-        assertEquals(expectedValidationFailed, json.encodeToString(validationFailed))
-        assertEquals(validationFailed, json.decodeFromString<ApiErrorDto>(expectedValidationFailed))
-
-        val invalidCode = ApiErrorDto(
-            error = AuthServerError.InvalidCode,
-            message = "Invalid verification code",
-        )
-        val expectedInvalidCode =
-            """{"error":"AuthServerError.InvalidCode","message":"Invalid verification code","fieldErrors":{}}"""
-        assertEquals(expectedInvalidCode, json.encodeToString(invalidCode))
-        assertEquals(invalidCode, json.decodeFromString<ApiErrorDto>(expectedInvalidCode))
-
-        val maxAttempts = ApiErrorDto(
-            error = AuthServerError.MaxAttemptsExceeded,
-            message = "Maximum verification attempts exceeded. Please try again later.",
-            retryAfterSeconds = 300L,
-        )
-        val expectedMaxAttempts =
-            """{"error":"AuthServerError.MaxAttemptsExceeded","message":"Maximum verification attempts exceeded. Please try again later.","fieldErrors":{},"retryAfterSeconds":300}"""
-        assertEquals(expectedMaxAttempts, json.encodeToString(maxAttempts))
-        assertEquals(maxAttempts, json.decodeFromString<ApiErrorDto>(expectedMaxAttempts))
-    }
-
-    @Test
-    fun `UserDto and ChatParticipantDto golden wire parity with explicitNulls false`() {
-        val verifiedUser = UserDto(
-            id = aliceId,
-            email = "alice@example.com",
-            displayName = "Alice",
-            isEmailVerified = true,
-        )
-        val expectedVerifiedUser =
-            """{"id":"$aliceId","email":"alice@example.com","displayName":"Alice","isEmailVerified":true}"""
-        assertEquals(expectedVerifiedUser, json.encodeToString(verifiedUser))
-        assertEquals(verifiedUser, json.decodeFromString<UserDto>(expectedVerifiedUser))
-
-        val unverifiedUser = UserDto(
-            id = bobId,
-            email = "bob@example.com",
-            displayName = "Bob",
-            isEmailVerified = false,
-        )
-        val expectedUnverifiedUser =
-            """{"id":"$bobId","email":"bob@example.com","displayName":"Bob","isEmailVerified":false}"""
-        assertEquals(expectedUnverifiedUser, json.encodeToString(unverifiedUser))
-        assertEquals(unverifiedUser, json.decodeFromString<UserDto>(expectedUnverifiedUser))
-
-        val participantNullAvatar = ChatParticipantDto(
-            userId = aliceId,
-            email = "alice@example.com",
-            displayName = "Alice",
-            profilePictureUrl = null,
-        )
-        val expectedParticipantNullAvatar =
-            """{"userId":"$aliceId","email":"alice@example.com","displayName":"Alice"}"""
-        assertEquals(expectedParticipantNullAvatar, json.encodeToString(participantNullAvatar))
-        assertEquals(
-            participantNullAvatar,
-            json.decodeFromString<ChatParticipantDto>(expectedParticipantNullAvatar)
-        )
-
-        val participantWithAvatar = ChatParticipantDto(
-            userId = bobId,
-            email = "bob@example.com",
-            displayName = "Bob",
-            profilePictureUrl = "https://cdn.example.com/bob.png",
-        )
-        val expectedParticipantWithAvatar =
-            """{"userId":"$bobId","email":"bob@example.com","displayName":"Bob","profilePictureUrl":"https://cdn.example.com/bob.png"}"""
-        assertEquals(expectedParticipantWithAvatar, json.encodeToString(participantWithAvatar))
-        assertEquals(
-            participantWithAvatar,
-            json.decodeFromString<ChatParticipantDto>(expectedParticipantWithAvatar)
-        )
-    }
-
-    @Test
-    fun `AuthenticatedUserDto golden wire parity`() {
-        val dto = AuthenticatedUserDto(
-            user = UserDto(
-                id = aliceId,
-                email = "alice@example.com",
-                displayName = "Alice",
-                isEmailVerified = true,
-            ),
-            accessToken = "access-token-abc",
-            refreshToken = "refresh-token-xyz",
-        )
-        val expected =
-            """{"user":{"id":"$aliceId","email":"alice@example.com","displayName":"Alice","isEmailVerified":true},"accessToken":"access-token-abc","refreshToken":"refresh-token-xyz"}"""
-        assertEquals(expected, json.encodeToString(dto))
-        assertEquals(dto, json.decodeFromString<AuthenticatedUserDto>(expected))
-    }
-
-    @Test
-    fun `ChatRoomDto golden wire parity for DIRECT with lastMessage and GROUP with null name`() {
-        val alice = ChatParticipantDto(
-            userId = aliceId,
-            email = "alice@example.com",
-            displayName = "Alice",
-            profilePictureUrl = null,
-        )
-        val bob = ChatParticipantDto(
-            userId = bobId,
-            email = "bob@example.com",
-            displayName = "Bob",
-            profilePictureUrl = null,
-        )
-        val lastMessage = ChatMessageDto(
-            id = messageId,
-            roomId = roomId,
-            senderId = aliceId,
-            content = "Golden message",
-            createdAt = fixedInstant,
-        )
-
-        val directRoom = ChatRoomDto(
-            id = roomId,
-            type = ChatRoomType.DIRECT,
-            name = null,
-            creator = alice,
-            participants = listOf(alice, bob),
-            lastMessage = lastMessage,
-            lastActivityAt = fixedInstant,
-        )
-        val expectedDirect =
-            """{"id":"$roomId","type":"DIRECT","creator":{"userId":"$aliceId","email":"alice@example.com","displayName":"Alice"},"participants":[{"userId":"$aliceId","email":"alice@example.com","displayName":"Alice"},{"userId":"$bobId","email":"bob@example.com","displayName":"Bob"}],"lastMessage":{"id":"$messageId","roomId":"$roomId","senderId":"$aliceId","content":"Golden message","createdAt":"2026-11-03T20:00:00Z"},"lastActivityAt":"2026-11-03T20:00:00Z"}"""
-        assertEquals(expectedDirect, json.encodeToString(directRoom))
-        assertEquals(directRoom, json.decodeFromString<ChatRoomDto>(expectedDirect))
-
-        val groupRoom = ChatRoomDto(
-            id = roomId,
-            type = ChatRoomType.GROUP,
-            name = null,
-            creator = alice,
-            participants = listOf(alice, bob),
-            lastMessage = null,
-            lastActivityAt = fixedInstant,
-        )
-        val expectedGroup =
-            """{"id":"$roomId","type":"GROUP","creator":{"userId":"$aliceId","email":"alice@example.com","displayName":"Alice"},"participants":[{"userId":"$aliceId","email":"alice@example.com","displayName":"Alice"},{"userId":"$bobId","email":"bob@example.com","displayName":"Bob"}],"lastActivityAt":"2026-11-03T20:00:00Z"}"""
-        assertEquals(expectedGroup, json.encodeToString(groupRoom))
-        assertEquals(groupRoom, json.decodeFromString<ChatRoomDto>(expectedGroup))
-    }
-
-    @Test
-    fun `ChatMessageSliceDto golden wire parity`() {
-        val msg = ChatMessageDto(
-            id = messageId,
-            roomId = roomId,
-            senderId = aliceId,
-            content = "Golden message",
-            createdAt = fixedInstant,
-        )
-        val slice = ChatMessageSliceDto(
-            messages = listOf(msg),
-            hasMore = true,
-        )
-        val expected =
-            """{"messages":[{"id":"$messageId","roomId":"$roomId","senderId":"$aliceId","content":"Golden message","createdAt":"2026-11-03T20:00:00Z"}],"hasMore":true}"""
-        assertEquals(expected, json.encodeToString(slice))
-        assertEquals(slice, json.decodeFromString<ChatMessageSliceDto>(expected))
-    }
-
-    @Test
-    fun `WsClientMessage and WsServerEvent golden wire parity for all variants`() {
-        val clientNewMessage: WsClientMessage = WsClientMessage.NewMessage(
-            roomId = roomId,
-            content = "Hello via WS",
-            messageId = clientTempMessageId,
-        )
-        val expectedClientNewMessage =
-            """{"type":"new_message","roomId":"$roomId","content":"Hello via WS","messageId":"$clientTempMessageId"}"""
-        assertEquals(expectedClientNewMessage, json.encodeToString<WsClientMessage>(clientNewMessage))
-        assertEquals(clientNewMessage, json.decodeFromString<WsClientMessage>(expectedClientNewMessage))
-
-        val chatMessage = ChatMessageDto(
-            id = messageId,
-            roomId = roomId,
-            senderId = aliceId,
-            content = "Broadcast message",
-            createdAt = fixedInstant,
-        )
-        val alice = ChatParticipantDto(
-            userId = aliceId,
-            email = "alice@example.com",
-            displayName = "Alice",
-            profilePictureUrl = null,
-        )
-        val bob = ChatParticipantDto(
-            userId = bobId,
-            email = "bob@example.com",
-            displayName = "Bob",
-            profilePictureUrl = null,
-        )
-
-        val eventNewMessage: WsServerEvent = WsServerEvent.NewMessage(message = chatMessage)
-        val expectedNewMessage =
-            """{"type":"new_message","message":{"id":"$messageId","roomId":"$roomId","senderId":"$aliceId","content":"Broadcast message","createdAt":"2026-11-03T20:00:00Z"}}"""
-        assertEquals(expectedNewMessage, json.encodeToString<WsServerEvent>(eventNewMessage))
-        assertEquals(eventNewMessage, json.decodeFromString<WsServerEvent>(expectedNewMessage))
-
-        val eventDeleted: WsServerEvent = WsServerEvent.MessageDeleted(
-            roomId = roomId,
-            messageId = messageId,
-        )
-        val expectedDeleted =
-            """{"type":"message_deleted","roomId":"$roomId","messageId":"$messageId"}"""
-        assertEquals(expectedDeleted, json.encodeToString<WsServerEvent>(eventDeleted))
-        assertEquals(eventDeleted, json.decodeFromString<WsServerEvent>(expectedDeleted))
-
-        val eventJoinedWithAddedBy: WsServerEvent = WsServerEvent.ParticipantJoined(
-            roomId = roomId,
-            newUsers = listOf(bob),
-            addedBy = alice,
-        )
-        val expectedJoined =
-            """{"type":"participant_joined","roomId":"$roomId","newUsers":[{"userId":"$bobId","email":"bob@example.com","displayName":"Bob"}],"addedBy":{"userId":"$aliceId","email":"alice@example.com","displayName":"Alice"}}"""
-        assertEquals(expectedJoined, json.encodeToString<WsServerEvent>(eventJoinedWithAddedBy))
-        assertEquals(eventJoinedWithAddedBy, json.decodeFromString<WsServerEvent>(expectedJoined))
-
-        val eventLeft: WsServerEvent = WsServerEvent.ParticipantLeft(
-            roomId = roomId,
-            leftUser = bob,
-            kickedBy = null,
-        )
-        val expectedLeft =
-            """{"type":"participant_left","roomId":"$roomId","leftUser":{"userId":"$bobId","email":"bob@example.com","displayName":"Bob"}}"""
-        assertEquals(expectedLeft, json.encodeToString<WsServerEvent>(eventLeft))
-        assertEquals(eventLeft, json.decodeFromString<WsServerEvent>(expectedLeft))
-
-        val eventError: WsServerEvent = WsServerEvent.Error(
-            error = ChatServerError.ChatRoomNotFound,
-            message = "Room not found",
-            roomId = roomId,
-            messageId = messageId,
-        )
-        val expectedError =
-            """{"type":"error","error":"ChatServerError.ChatRoomNotFound","message":"Room not found","roomId":"$roomId","messageId":"$messageId"}"""
-        assertEquals(expectedError, json.encodeToString<WsServerEvent>(eventError))
-        assertEquals(eventError, json.decodeFromString<WsServerEvent>(expectedError))
     }
 
     @Test
@@ -538,5 +273,75 @@ class BackendGoldenWireTest {
             .andExpect(header().string("Retry-After", "300"))
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(content().string(expectedMaxAttemptsJson))
+    }
+
+    @Test
+    fun `Spring WebSocket handler uses ContractJson for WsClientMessage and WsServerEvent frames`() {
+        val validToken = "Bearer valid-access-token"
+        val alice = ChatParticipant(
+            userId = UserId(aliceId),
+            email = "alice@example.com",
+            displayName = "Alice",
+            profilePictureUrl = null,
+        )
+        val room = ChatRoom(
+            id = ChatRoomId(roomId),
+            type = ChatRoomType.DIRECT,
+            name = null,
+            creator = alice,
+            participants = setOf(alice),
+            lastMessage = null,
+            lastActivityAt = fixedInstant,
+            createdAt = fixedInstant,
+        )
+        val savedMessage = ChatMessage(
+            id = ChatMessageId(messageId),
+            roomId = ChatRoomId(roomId),
+            sender = alice,
+            content = "Hello via WS",
+            createdAt = fixedInstant,
+        )
+
+        `when`(jwtService.validateAccessToken(validToken)).thenReturn(true)
+        `when`(jwtService.getUserIdFromToken(validToken)).thenReturn(UserId(aliceId))
+        `when`(chatRoomService.findChatRoomsByUser(UserId(aliceId))).thenReturn(listOf(room))
+        `when`(
+            chatMessageService.sendMessage(
+                roomId = ChatRoomId(roomId),
+                senderId = UserId(aliceId),
+                content = "Hello via WS",
+                messageId = ChatMessageId(messageId),
+            )
+        ).thenReturn(savedMessage)
+
+        val session = mock(WebSocketSession::class.java)
+        val headers = HttpHeaders().apply { add(HttpHeaders.AUTHORIZATION, validToken) }
+        `when`(session.id).thenReturn("ws-golden-session-1")
+        `when`(session.handshakeHeaders).thenReturn(headers)
+        `when`(session.isOpen).thenReturn(true)
+
+        chatWebSocketHandler.afterConnectionEstablished(session)
+        try {
+            val incomingClientJson =
+                """{"type":"new_message","roomId":"$roomId","content":"Hello via WS","messageId":"$messageId"}"""
+            chatWebSocketHandler.handleMessage(session, TextMessage(incomingClientJson))
+
+            val unknownRoomClientJson =
+                """{"type":"new_message","roomId":"$missingRoomId","content":"Unknown room","messageId":"$messageId"}"""
+            chatWebSocketHandler.handleMessage(session, TextMessage(unknownRoomClientJson))
+
+            val messageCaptor = ArgumentCaptor.forClass(TextMessage::class.java)
+            verify(session, atLeastOnce()).sendMessage(messageCaptor.capture())
+            val payloads = messageCaptor.allValues.map { it.payload }
+
+            val expectedBroadcastJson =
+                """{"type":"new_message","message":{"id":"$messageId","roomId":"$roomId","senderId":"$aliceId","content":"Hello via WS","createdAt":"2026-11-03T20:00:00Z"}}"""
+            val expectedErrorJson =
+                """{"type":"error","error":"ChatServerError.ChatRoomNotFound","message":"Chat room not found or access denied","roomId":"$missingRoomId","messageId":"$messageId"}"""
+
+            assertEquals(listOf(expectedBroadcastJson, expectedErrorJson), payloads)
+        } finally {
+            chatWebSocketHandler.afterConnectionClosed(session, CloseStatus.NORMAL)
+        }
     }
 }
