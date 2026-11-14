@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.time.Instant
 import java.util.*
 
 @Repository
@@ -19,6 +20,16 @@ interface RefreshTokenRepository : JpaRepository<RefreshTokenEntity, Long> {
         DELETE FROM RefreshTokenEntity rt WHERE rt.userId = :userId AND rt.hashedToken = :hashedToken
     """)
     fun deleteByUserIdAndHashedToken(userId: UUID, hashedToken: String): Long
+
+    /**
+     * Deletes stored refresh tokens whose expiration timestamp is before [cutoff].
+     * Return deleted count.
+     */
+    @Modifying
+    @Query("""
+        DELETE FROM RefreshTokenEntity rt WHERE rt.expiredAt < :cutoff
+    """)
+    fun deleteExpiredTokensBefore(cutoff: Instant): Int
 
     /** Deletes all stored refresh tokens for the user. */
     fun deleteByUserId(userId: UUID)

@@ -13,7 +13,8 @@ internal sealed class InternalChatEvent {
 
     data class ChatParticipantJoinedEvent(
         val roomId: ChatRoomId,
-        val newUsers: Set<ChatParticipant>
+        val newUsers: Set<ChatParticipant>,
+        val addedBy: ChatParticipant? = null,
     ) : InternalChatEvent()
 
     data class ChatParticipantLeftEvent(

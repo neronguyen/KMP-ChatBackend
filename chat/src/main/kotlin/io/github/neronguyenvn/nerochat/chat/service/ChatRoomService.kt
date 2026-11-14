@@ -9,7 +9,6 @@ import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantAlreadyI
 import io.github.neronguyenvn.nerochat.chat.domain.exception.ParticipantNotInRoomException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
-import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatMessageEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.ChatRoomEntity
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.DirectPairKey
 import io.github.neronguyenvn.nerochat.chat.infra.database.model.asExternalModel
@@ -20,10 +19,10 @@ import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -33,6 +32,7 @@ class ChatRoomService(
     private val chatRoomRepository: ChatRoomRepository,
     private val chatMessageRepository: ChatMessageRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
+    private val directChatRoomCreationTxHelper: DirectChatRoomCreationTxHelper,
 ) {
     fun existsById(roomId: ChatRoomId): Boolean =
         chatRoomRepository.existsById(roomId.asUUID())
@@ -62,7 +62,6 @@ class ChatRoomService(
             .sortedByDescending { it.lastActivityAt }
     }
 
-    @Transactional
     fun createDirectChatRoom(
         creatorId: UserId,
         targetUserId: UserId,
@@ -79,45 +78,29 @@ class ChatRoomService(
             ?: throw ChatParticipantNotFoundException(targetUserId)
 
         val directPairKey = DirectPairKey.of(creatorId, targetUserId).value
-        val existingRoom = chatRoomRepository.findDirectChatRoomBetween(directPairKey)
+        findExistingDirectChatRoom(directPairKey)?.let { return it }
 
-        if (existingRoom != null) {
-            val lastMessage = chatMessageRepository
-                .findLatestMessagesByRoomIds(setOf(existingRoom.id!!))
-                .firstOrNull()
-                ?.asExternalModel()
-
-            return existingRoom.asExternalModel(lastMessage = lastMessage)
-        }
-
-        // TODO: Handle race condition when two users create a direct room concurrently.
-        // Catching DataIntegrityViolationException here marks the current @Transactional session as rollback-only
-        // and corrupts the PersistenceContext, causing UnexpectedRollbackException on commit.
-        // Fix by isolating insert into a separate transaction (REQUIRES_NEW) or handling via DB-level upsert/lock.
-        val newRoom = chatRoomRepository.save(
-            ChatRoomEntity(
-                type = ChatRoomType.DIRECT,
+        return try {
+            directChatRoomCreationTxHelper.createDirectChatRoom(
                 directPairKey = directPairKey,
                 creator = creator,
-                participants = setOf(creator, target),
+                target = target,
+                message = message,
             )
-        )
+        } catch (ex: DataIntegrityViolationException) {
+            findExistingDirectChatRoom(directPairKey) ?: throw ex
+        }
+    }
 
-        val initialMessage = chatMessageRepository.save(
-            ChatMessageEntity(
-                roomId = newRoom.id ?: error("ChatRoomId must be generated"),
-                sender = creator,
-                content = message.trim(),
-            )
-        )
+    private fun findExistingDirectChatRoom(directPairKey: String): ChatRoom? {
+        val existingRoom = chatRoomRepository.findDirectChatRoomBetween(directPairKey) ?: return null
+        val roomId = existingRoom.id ?: error("ChatRoomId must be generated")
+        val lastMessage = chatMessageRepository
+            .findLatestMessagesByRoomIds(setOf(roomId))
+            .firstOrNull()
+            ?.asExternalModel()
 
-        val createdRoom = newRoom.asExternalModel(lastMessage = initialMessage.asExternalModel())
-
-        applicationEventPublisher.publishEvent(
-            InternalChatEvent.ChatRoomCreatedEvent(chatRoom = createdRoom)
-        )
-
-        return createdRoom
+        return existingRoom.asExternalModel(lastMessage = lastMessage)
     }
 
     @Transactional
@@ -178,13 +161,9 @@ class ChatRoomService(
             throw DirectChatRoomModificationException()
         }
 
-        val isRequesterInChatRoom = chatRoom.participants.any {
+        val requester = chatRoom.participants.firstOrNull {
             it.userId == requesterId.asUUID()
-        }
-
-        if (!isRequesterInChatRoom) {
-            throw ParticipantNotInRoomException()
-        }
+        } ?: throw ParticipantNotInRoomException()
 
         val chatParticipantIds = chatRoom.participants.map { UserId(it.userId) }.toSet()
 
@@ -207,7 +186,8 @@ class ChatRoomService(
         applicationEventPublisher.publishEvent(
             InternalChatEvent.ChatParticipantJoinedEvent(
                 roomId = roomId,
-                newUsers = users.map { it.asExternalModel() }.toSet()
+                newUsers = users.map { it.asExternalModel() }.toSet(),
+                addedBy = requester.asExternalModel(),
             )
         )
 

@@ -44,6 +44,7 @@ class ChatRoomServiceTest {
     private lateinit var chatRoomRepository: ChatRoomRepository
     private lateinit var chatMessageRepository: ChatMessageRepository
     private lateinit var applicationEventPublisher: ApplicationEventPublisher
+    private lateinit var directChatRoomCreationTxHelper: DirectChatRoomCreationTxHelper
     private lateinit var chatRoomService: ChatRoomService
 
     private val creatorId = UserId(UUID.randomUUID())
@@ -60,12 +61,18 @@ class ChatRoomServiceTest {
         chatRoomRepository = mock(ChatRoomRepository::class.java)
         chatMessageRepository = mock(ChatMessageRepository::class.java)
         applicationEventPublisher = mock(ApplicationEventPublisher::class.java)
+        directChatRoomCreationTxHelper = DirectChatRoomCreationTxHelper(
+            chatRoomRepository = chatRoomRepository,
+            chatMessageRepository = chatMessageRepository,
+            applicationEventPublisher = applicationEventPublisher,
+        )
 
         chatRoomService = ChatRoomService(
             chatParticipantRepository = chatParticipantRepository,
             chatRoomRepository = chatRoomRepository,
             chatMessageRepository = chatMessageRepository,
             applicationEventPublisher = applicationEventPublisher,
+            directChatRoomCreationTxHelper = directChatRoomCreationTxHelper,
         )
 
         creatorEntity = ChatParticipantEntity(
@@ -207,6 +214,52 @@ class ChatRoomServiceTest {
                 message = "Some message"
             )
         }
+
+        verify(chatRoomRepository).save(any(ChatRoomEntity::class.java))
+        verify(chatMessageRepository, never()).save(any(ChatMessageEntity::class.java))
+        verify(applicationEventPublisher, never()).publishEvent(any())
+    }
+
+    @Test
+    fun `createDirectChatRoom recovers from DataIntegrityViolationException when concurrent winner exists without publishing duplicate event`() {
+        `when`(chatParticipantRepository.findById(creatorId.asUUID())).thenReturn(Optional.of(creatorEntity))
+        `when`(chatParticipantRepository.findById(targetUserId.asUUID())).thenReturn(Optional.of(targetEntity))
+
+        val directPairKey = DirectPairKey.of(creatorId, targetUserId).value
+        val winnerRoomId = UUID.randomUUID()
+        val winnerRoomEntity = ChatRoomEntity(
+            id = winnerRoomId,
+            type = ChatRoomType.DIRECT,
+            directPairKey = directPairKey,
+            creator = targetEntity,
+            participants = setOf(creatorEntity, targetEntity),
+            createdAt = Instant.now(),
+        )
+        val winnerMessageEntity = ChatMessageEntity(
+            id = UUID.randomUUID(),
+            roomId = winnerRoomId,
+            sender = targetEntity,
+            content = "Concurrent winner message",
+            createdAt = Instant.now(),
+        )
+
+        `when`(chatRoomRepository.findDirectChatRoomBetween(directPairKey))
+            .thenReturn(null)
+            .thenReturn(winnerRoomEntity)
+        `when`(chatRoomRepository.save(any(ChatRoomEntity::class.java)))
+            .thenThrow(DataIntegrityViolationException("Duplicate direct_pair_key"))
+        `when`(chatMessageRepository.findLatestMessagesByRoomIds(setOf(winnerRoomId)))
+            .thenReturn(listOf(winnerMessageEntity))
+
+        val result = chatRoomService.createDirectChatRoom(
+            creatorId = creatorId,
+            targetUserId = targetUserId,
+            message = "Losing message",
+        )
+
+        assertEquals(winnerRoomId.toString(), result.id.value)
+        assertEquals(ChatRoomType.DIRECT, result.type)
+        assertEquals("Concurrent winner message", result.lastMessage?.content)
 
         verify(chatRoomRepository).save(any(ChatRoomEntity::class.java))
         verify(chatMessageRepository, never()).save(any(ChatMessageEntity::class.java))
@@ -444,6 +497,10 @@ class ChatRoomServiceTest {
         assertEquals(roomId, captor.value.roomId)
         assertEquals(1, captor.value.newUsers.size)
         assertEquals(user3Id.value, captor.value.newUsers.first().userId.value)
+        assertNotNull(captor.value.addedBy)
+        assertEquals(creatorId.value, captor.value.addedBy?.userId?.value)
+        assertEquals(creatorEntity.email, captor.value.addedBy?.email)
+        assertEquals(creatorEntity.displayName, captor.value.addedBy?.displayName)
     }
 
     @Test

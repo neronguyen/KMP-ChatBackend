@@ -279,7 +279,7 @@ class ChatWebSocketHandler(
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    private fun onDeleteMessage(event: InternalChatEvent.MessageDeletedEvent) {
+    internal fun onDeleteMessage(event: InternalChatEvent.MessageDeletedEvent) {
         broadcastToChatRoom(
             roomId = event.roomId,
             event = WsServerEvent.MessageDeleted(
@@ -290,7 +290,7 @@ class ChatWebSocketHandler(
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    private fun onJoinChatRoom(event: InternalChatEvent.ChatParticipantJoinedEvent) {
+    internal fun onJoinChatRoom(event: InternalChatEvent.ChatParticipantJoinedEvent) {
         event.newUsers.forEach { user ->
             roomIdsByUserId
                 .computeIfAbsent(user.userId) { ConcurrentHashMap.newKeySet() }
@@ -308,12 +308,13 @@ class ChatWebSocketHandler(
             event = WsServerEvent.ParticipantJoined(
                 roomId = event.roomId.value,
                 newUsers = event.newUsers.map { it.asDto() },
+                addedBy = event.addedBy?.asDto(),
             )
         )
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    private fun onRoomCreated(event: InternalChatEvent.ChatRoomCreatedEvent) {
+    internal fun onRoomCreated(event: InternalChatEvent.ChatRoomCreatedEvent) {
         event.chatRoom.participants.forEach { user ->
             roomIdsByUserId
                 .computeIfAbsent(user.userId) { ConcurrentHashMap.newKeySet() }
@@ -324,6 +325,15 @@ class ChatWebSocketHandler(
                     .computeIfAbsent(event.chatRoom.id) { ConcurrentHashMap.newKeySet() }
                     .addAll(sessions)
             }
+        }
+
+        event.chatRoom.lastMessage?.let { initialMessage ->
+            broadcastToChatRoom(
+                roomId = event.chatRoom.id,
+                event = WsServerEvent.NewMessage(
+                    message = initialMessage.asDto(),
+                ),
+            )
         }
     }
 
