@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.chat.api.websocket
 
+import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatMessage
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
@@ -204,5 +205,100 @@ class ChatWebSocketHandlerTest {
         val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
         assertTrue(event is WsServerEvent.Error)
         assertEquals(ChatServerError.MessageSendFailed.code, (event as WsServerEvent.Error).error)
+    }
+
+    @Test
+    fun `onRoomCreated broadcasts NewMessage for initial message when lastMessage is non-null`() {
+        val newRoomId = ChatRoomId(UUID.randomUUID())
+        val targetUserId = UserId(UUID.randomUUID())
+        val targetParticipant = ChatParticipant(
+            userId = targetUserId,
+            email = "target@example.com",
+            displayName = "Target",
+            profilePictureUrl = null,
+        )
+        val now = Clock.System.now()
+        val initialMessage = ChatMessage(
+            id = ChatMessageId(UUID.randomUUID().toString()),
+            roomId = newRoomId,
+            sender = participant,
+            content = "First direct message",
+            createdAt = now,
+        )
+        val directRoom = ChatRoom(
+            id = newRoomId,
+            type = ChatRoomType.DIRECT,
+            name = null,
+            creator = participant,
+            participants = setOf(participant, targetParticipant),
+            lastMessage = initialMessage,
+            lastActivityAt = now,
+            createdAt = now,
+        )
+
+        handler.onRoomCreated(InternalChatEvent.ChatRoomCreatedEvent(chatRoom = directRoom))
+
+        val messageCaptor = ArgumentCaptor.forClass(TextMessage::class.java)
+        verify(session).sendMessage(messageCaptor.capture())
+
+        val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
+        assertTrue(event is WsServerEvent.NewMessage)
+        val newMessageEvent = event as WsServerEvent.NewMessage
+        assertEquals(initialMessage.id.value, newMessageEvent.message.id)
+        assertEquals(newRoomId.value, newMessageEvent.message.roomId)
+        assertEquals("First direct message", newMessageEvent.message.content)
+        assertEquals(userId.value, newMessageEvent.message.senderId)
+    }
+
+    @Test
+    fun `onRoomCreated registers room sessions without broadcasting NewMessage when lastMessage is null`() {
+        val groupRoomId = ChatRoomId(UUID.randomUUID())
+        val now = Clock.System.now()
+        val groupRoom = ChatRoom(
+            id = groupRoomId,
+            type = ChatRoomType.GROUP,
+            name = "Group Room",
+            creator = participant,
+            participants = setOf(participant),
+            lastMessage = null,
+            lastActivityAt = now,
+            createdAt = now,
+        )
+
+        handler.onRoomCreated(InternalChatEvent.ChatRoomCreatedEvent(chatRoom = groupRoom))
+
+        verify(session, never()).sendMessage(any())
+    }
+
+    @Test
+    fun `onJoinChatRoom broadcasts ParticipantJoined with non-null addedBy`() {
+        val newUserId = UserId(UUID.randomUUID())
+        val newUser = ChatParticipant(
+            userId = newUserId,
+            email = "newuser@example.com",
+            displayName = "New User",
+            profilePictureUrl = null,
+        )
+
+        handler.onJoinChatRoom(
+            InternalChatEvent.ChatParticipantJoinedEvent(
+                roomId = roomId,
+                newUsers = setOf(newUser),
+                addedBy = participant,
+            )
+        )
+
+        val messageCaptor = ArgumentCaptor.forClass(TextMessage::class.java)
+        verify(session).sendMessage(messageCaptor.capture())
+
+        val event = json.decodeFromString<WsServerEvent>(messageCaptor.value.payload)
+        assertTrue(event is WsServerEvent.ParticipantJoined)
+        val joinedEvent = event as WsServerEvent.ParticipantJoined
+        assertEquals(roomId.value, joinedEvent.roomId)
+        assertEquals(1, joinedEvent.newUsers.size)
+        assertEquals(newUserId.value, joinedEvent.newUsers.first().userId)
+        assertEquals(userId.value, joinedEvent.addedBy?.userId)
+        assertEquals("user@example.com", joinedEvent.addedBy?.email)
+        assertEquals("User", joinedEvent.addedBy?.displayName)
     }
 }

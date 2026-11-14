@@ -19,6 +19,8 @@ password resets, and Redis-backed rate limiting.
 - `[AuthExceptionHandler.kt:AuthExceptionHandler]`: Exception handler mapping domain exceptions
   (`InvalidCredentialsException`, `EmailNotVerifiedException`, `InvalidOtpException`, `OtpExpiredException`,
   `MaxAttemptsExceededException`, etc.) to `ApiErrorDto(error = AuthServerError.*)`.
+- `[RefreshTokenPurgeJob.kt:RefreshTokenPurgeJob]`: Daily scheduled job (`0 0 3 * * *`) purging expired
+  `RefreshTokenEntity` records via `RefreshTokenRepository.deleteExpiredTokensBefore`.
 
 ## Invariants
 - Depends on `:common` and `:contract:auth`. Never imports `:chat` or `:notification`.
@@ -29,7 +31,7 @@ password resets, and Redis-backed rate limiting.
 
 ## Side Effects
 
-- Reads/writes PostgreSQL tables: `users`, `refresh_tokens`.
+- Reads/writes PostgreSQL tables: `users`, `refresh_tokens` (including daily scheduled purge of expired refresh tokens).
 - Acquires Redis distributed rate-limiting buckets, lock leases, and OTP lifecycle keys (`auth:otp:*`).
 - Publishes `UserEvent.Created`, `UserEvent.Verified`, `UserEvent.RequestResendVerification`, `UserEvent.RequestResetPassword` via `EventPublisher`.
 
