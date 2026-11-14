@@ -5,7 +5,7 @@ Spring Boot application bootstrap, root composition container, global security f
 
 ## Interface
 - `[ChatApp.kt:ChatApp]`: Application entrypoint annotated with `@SpringBootApplication`.
-- `[SecurityConfig.kt:SecurityConfig]`: Spring Security filter chain definition, endpoint authorization rules, and stateless session management.
+- `[SecurityConfig.kt:SecurityConfig]`: Spring Security filter chain definition, endpoint authorization rules, stateless session management, and `contractJson()` bean (`ContractJson`).
 - `[JwtAuthenticationFilter.kt:JwtAuthenticationFilter]`: Servlet filter authenticating Bearer JWT access tokens into Spring `SecurityContext`.
 - `[TrustedProxyFilter.kt:TrustedProxyFilter]`: Reverse proxy header validator ensuring IP resolution integrity for rate limiters.
 - `[RedisConfig.kt:RedisConfig]`: Redisson Spring cache manager bean configuration (`RedissonSpringCacheManager`).

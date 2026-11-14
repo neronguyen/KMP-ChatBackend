@@ -11,6 +11,7 @@ import io.github.neronguyenvn.nerochat.chat.api.controller.ChatRoomController
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatParticipantService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.ContractJson
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import io.github.neronguyenvn.nerochat.domain.type.UserId
@@ -22,7 +23,6 @@ import io.github.neronguyenvn.nerochat.user.service.EmailVerificationService
 import io.github.neronguyenvn.nerochat.user.service.PasswordResetService
 import io.github.neronguyenvn.nerochat.user.service.ratelimiting.EmailRateLimitingService
 import jakarta.servlet.Filter
-import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -103,7 +103,7 @@ class SecurityAndValidationIntegrationTest {
     private lateinit var chatMessageService: ChatMessageService
 
     private lateinit var mockMvc: MockMvc
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = ContractJson
     private val validToken = "valid-test-access-token"
     private val testUserId = UserId(UUID.randomUUID())
 

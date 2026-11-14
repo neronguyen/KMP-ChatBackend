@@ -1,5 +1,6 @@
 package io.github.neronguyenvn.nerochat.api.security
 
+import io.github.neronguyenvn.nerochat.contract.ContractJson
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import jakarta.servlet.http.HttpServletResponse
@@ -15,9 +16,10 @@ import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-class SecurityConfig(
-    private val json: Json = Json { ignoreUnknownKeys = true }
-) {
+class SecurityConfig {
+
+    @Bean
+    fun contractJson(): Json = ContractJson
 
     @Bean
     fun securityFilterChain(
@@ -73,7 +75,7 @@ class SecurityConfig(
                 error = CommonServerError.Unauthorized,
                 message = "Authentication required",
             )
-            response.writer.write(json.encodeToString(errorResponse))
+            response.writer.write(ContractJson.encodeToString(errorResponse))
         }
 
     internal fun apiAccessDeniedHandler(): AccessDeniedHandler =
@@ -84,6 +86,6 @@ class SecurityConfig(
                 error = CommonServerError.Unauthorized,
                 message = "Access denied",
             )
-            response.writer.write(json.encodeToString(errorResponse))
+            response.writer.write(ContractJson.encodeToString(errorResponse))
         }
 }

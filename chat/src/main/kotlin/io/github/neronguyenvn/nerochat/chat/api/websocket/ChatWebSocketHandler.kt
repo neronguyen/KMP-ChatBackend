@@ -5,6 +5,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.event.InternalChatEvent
 import io.github.neronguyenvn.nerochat.chat.domain.exception.DuplicateMessageIdException
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.ContractJson
 import io.github.neronguyenvn.nerochat.contract.chat.WsClientMessage
 import io.github.neronguyenvn.nerochat.contract.chat.WsServerEvent
 import io.github.neronguyenvn.nerochat.contract.chat.error.ChatServerError
@@ -35,7 +36,7 @@ class ChatWebSocketHandler(
     private val chatRoomService: ChatRoomService,
     private val chatMessageService: ChatMessageService,
     private val jwtService: JwtService,
-    private val json: Json = defaultJson
+    private val json: Json = ContractJson
 ) : TextWebSocketHandler() {
 
     private data class UserSession(
@@ -376,9 +377,5 @@ class ChatWebSocketHandler(
     companion object {
         private const val PING_INTERVAL_MS = 30_000L
         private const val PONG_TIMEOUT_MS = 30_000L
-
-        private val defaultJson = Json {
-            classDiscriminator = WsServerEvent.CLASS_DISCRIMINATOR
-        }
     }
 }

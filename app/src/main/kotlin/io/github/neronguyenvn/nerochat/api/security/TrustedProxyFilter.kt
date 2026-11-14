@@ -1,6 +1,7 @@
 package io.github.neronguyenvn.nerochat.api.security
 
 import io.github.neronguyenvn.nerochat.api.config.TrustedProxyConfig
+import io.github.neronguyenvn.nerochat.contract.ContractJson
 import io.github.neronguyenvn.nerochat.contract.error.ApiErrorDto
 import io.github.neronguyenvn.nerochat.contract.error.CommonServerError
 import jakarta.servlet.FilterChain
@@ -19,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class TrustedProxyFilter(
     private val config: TrustedProxyConfig,
-    private val json: Json = Json { ignoreUnknownKeys = true }
+    private val json: Json = ContractJson
 ) : OncePerRequestFilter() {
 
     private val matchers: List<IpAddressMatcher> = config.trustedIps.map { ip ->

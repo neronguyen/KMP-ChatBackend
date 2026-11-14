@@ -6,6 +6,7 @@ import io.github.neronguyenvn.nerochat.chat.domain.model.ChatParticipant
 import io.github.neronguyenvn.nerochat.chat.domain.model.ChatRoom
 import io.github.neronguyenvn.nerochat.chat.service.ChatMessageService
 import io.github.neronguyenvn.nerochat.chat.service.ChatRoomService
+import io.github.neronguyenvn.nerochat.contract.ContractJson
 import io.github.neronguyenvn.nerochat.contract.chat.ChatRoomType
 import io.github.neronguyenvn.nerochat.contract.chat.WsClientMessage
 import io.github.neronguyenvn.nerochat.contract.chat.WsServerEvent
@@ -14,7 +15,6 @@ import io.github.neronguyenvn.nerochat.domain.type.ChatMessageId
 import io.github.neronguyenvn.nerochat.domain.type.ChatRoomId
 import io.github.neronguyenvn.nerochat.domain.type.UserId
 import io.github.neronguyenvn.nerochat.service.JwtService
-import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -37,9 +37,7 @@ class ChatWebSocketHandlerTest {
     private lateinit var handler: ChatWebSocketHandler
     private lateinit var session: WebSocketSession
 
-    private val json = Json {
-        classDiscriminator = WsServerEvent.CLASS_DISCRIMINATOR
-    }
+    private val json = ContractJson
 
     private val userId = UserId(UUID.randomUUID())
     private val roomId = ChatRoomId(UUID.randomUUID())
