@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: nerochat-postgres
+    environment:
+      POSTGRES_DB: nerochat
+      POSTGRES_USER: nerochat
+      POSTGRES_PASSWORD: nerochat_e2e
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U nerochat -d nerochat" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: nerochat-redis
+    command: [ "redis-server", "--requirepass", "nerochat_e2e" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "nerochat_e2e", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 3s
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: nerochat-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: nerochat
+      RABBITMQ_DEFAULT_PASS: nerochat_e2e
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: nerochat-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8025/api/v1/info" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 3s
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

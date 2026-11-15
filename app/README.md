@@ -22,6 +22,14 @@ Spring Boot application bootstrap, root composition container, global security f
 - Binds server HTTP port (default 8080) and initializes database connection pool (HikariCP).
 - Exports `docs/openapi.json` and `docs/nerochat.postman_collection.json`.
 
+## Local E2E Infrastructure (`e2e` Profile)
+
+- Prerequisites: start Postgres, Redis, RabbitMQ, and Mailpit via `docker compose up -d --wait` from repository root
+  (`docker-compose.yml`).
+- Launch command: `./gradlew :app:bootRun --args='--spring.profiles.active=dev,e2e'`.
+- `application-e2e.yaml` overrides cloud TLS/STARTTLS defaults for loopback containers (unencrypted AMQP/SMTP,
+  `create_namespaces: true`, non-production JWT/OTP secrets, IP rate limiting disabled).
+
 ## Verification
 - Run all `:app` unit, Golden Wire parity (`BackendGoldenWireTest`), and container-backed integration tests (skipped automatically if Docker is unavailable): `./gradlew :app:test --rerun-tasks`
 - Run only Testcontainers integration tests (`PostgreSQL`, `Redis`, `RabbitMQ` tagged `@Tag("integration")`): `./gradlew :app:integrationTest --rerun-tasks`

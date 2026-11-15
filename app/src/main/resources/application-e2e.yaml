@@ -1,0 +1,59 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nerochat
+    username: nerochat
+    password: nerochat_e2e
+
+  redis:
+    redisson:
+      config: |
+        singleServerConfig:
+          address: "redis://localhost:6379"
+          password: "nerochat_e2e"
+          connectionMinimumIdleSize: 2
+          connectionPoolSize: 5
+          connectTimeout: 10000
+          timeout: 3000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        hbm2ddl:
+          create_namespaces: true
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: nerochat
+    password: nerochat_e2e
+    virtual-host: /
+    ssl:
+      enabled: false
+
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+
+jwt:
+  secret: dGhpcy1pcy1hLWRldmVsb3BtZW50LW9ubHktMjU2LWJpdC1qd3Qtc2VjcmV0LWtleQ==
+
+otp:
+  pepper: e2e-only-otp-pepper-value
+
+email:
+  from: noreply@nerochat.local
+
+rate-limit:
+  ip:
+    apply-limit: false

@@ -41,14 +41,15 @@ Before proposing any plan or writing code, read and follow:
 
 ## 3. Verified Development & Verification Commands
 
-| Task / Purpose                     | Tier                       | Verified Command                                                                                                           |
-|------------------------------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **Fast Selective Feedback**        | Tier 1 (Iterative / Local) | `./scripts/verify.sh` *(Auto-detects modified modules via Git, reuses daemon & build cache)*                               |
-| **Selective Diagram Sync**         | Tier 1 (Architecture Doc)  | `./scripts/sync-archify.sh` *(Auto-detects modified .archify.json, delivers HTML, checks layout, exports dual-theme PNGs)* |
-| **Verify Diagram Freshness**       | CI / Pre-Push              | `./scripts/sync-archify.sh --check`                                                                                        |
-| **Strict Clean Verification Gate** | CI / Pre-Merge Gate        | `./scripts/verify.sh clean` *(Full rerun: check, CI enforces this)*                                                        |
-| Fast re-run of all module checks   | Direct Gradle              | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home`                        |
-| List runnable tasks                | Utility                    | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew tasks --all --gradle-user-home=/tmp/gradle-ro-home --no-daemon`      |
+| Task / Purpose                     | Tier                       | Verified Command                                                                                                                                        |
+|------------------------------------|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Fast Selective Feedback**        | Tier 1 (Iterative / Local) | `./scripts/verify.sh` *(Auto-detects modified modules via Git, reuses daemon & build cache)*                                                            |
+| **Selective Diagram Sync**         | Tier 1 (Architecture Doc)  | `./scripts/sync-archify.sh` *(Auto-detects modified .archify.json, delivers HTML, checks layout, exports dual-theme PNGs)*                              |
+| **Verify Diagram Freshness**       | CI / Pre-Push              | `./scripts/sync-archify.sh --check`                                                                                                                     |
+| **Strict Clean Verification Gate** | CI / Pre-Merge Gate        | `./scripts/verify.sh clean` *(Full rerun: check, CI enforces this)*                                                                                     |
+| **Tier 3 Local E2E Infra & Boot**  | Tier 3 (Local Full-Stack)  | `docker compose up -d --wait && ./gradlew :app:bootRun --args='--spring.profiles.active=dev,e2e'` *(Used by `../Android-ChatApp/scripts/smoke-e2e.sh`)* |
+| Fast re-run of all module checks   | Direct Gradle              | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home`                                                     |
+| List runnable tasks                | Utility                    | `GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew tasks --all --gradle-user-home=/tmp/gradle-ro-home --no-daemon`                                   |
 
 > [!IMPORTANT]
 > **Verification Tier Policy**:
