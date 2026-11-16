@@ -24,8 +24,8 @@ Spring Boot application bootstrap, root composition container, global security f
 
 ## Local E2E Infrastructure (`e2e` Profile)
 
-- Prerequisites: start Postgres, Redis, RabbitMQ, and Mailpit via `docker compose up -d --wait` from repository root
-  (`docker-compose.yml`).
+- Prerequisites: start Postgres, Redis, RabbitMQ, and Mailpit via
+  `docker compose -f docker-compose.e2e.yml up -d --wait` from repository root (`docker-compose.e2e.yml`).
 - Launch command: `./gradlew :app:bootRun --args='--spring.profiles.active=dev,e2e'`.
 - `application-e2e.yaml` overrides cloud TLS/STARTTLS defaults for loopback containers (unencrypted AMQP/SMTP,
   `create_namespaces: true`, non-production JWT/OTP secrets, IP rate limiting disabled).
