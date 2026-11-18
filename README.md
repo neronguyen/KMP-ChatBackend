@@ -53,20 +53,41 @@ limiting, room/message persistence, real-time WebSocket sessions, and asynchrono
 
 ## Global Side Effects
 
-- **PostgreSQL Database**: Relational tables for accounts (`users`, `refresh_tokens`, `auth_tokens`) and conversations (`chat_rooms`, `chat_participants`, `chat_messages`).
-- **Redis (Redisson)**: Distributed locks, IP/email rate limiting buckets, and 30-minute recent message slice cache.
+- **PostgreSQL Database**: Relational tables for accounts (`users`, `refresh_tokens`) and conversations (`chat_rooms`,
+  `chat_participants`, `chat_messages`).
+- **Redis (Redisson)**: Distributed locks, IP/email rate limiting buckets, hashed 6-digit OTP verification/reset
+  buckets, and 30-minute recent message slice cache.
 - **RabbitMQ**: AMQP topic exchanges (`chat.events`, `user.events`) for asynchronous choreography.
-- **SMTP Server**: Outbound transactional emails for registration verification and password reset.
+- **SMTP Server**: Outbound transactional emails for 6-digit OTP registration verification and password reset.
 
-## System Verification
+## System Verification (5-Layer Testing Pyramid)
+
+Organized after the
+shared [Scalable Testing Strategy](https://developer.android.com/training/testing/fundamentals/strategies):
+
+1. **Unit**: Pure JVM logic, services, JWT, validators, controllers, exception handlers, and AMQP listeners
+   (`*ServiceTest`, `*ControllerTest`, `ChatWebSocketHandlerTest`, `JwtServiceTest`).
+2. **Component**: H2 `MODE=PostgreSQL` JPA & transaction slices (`RefreshTokenRepositoryTest`,
+   `ChatMessageRepositoryTest`, `ChatRoomServiceTransactionTest`) and Spring Web/Security MockMvc slices
+   (`SecurityAndValidationIntegrationTest`, `BackendGoldenWireTest`).
+3. **Feature**: Full `ChatApp` Spring context + Testcontainers (`PostgreSQL`, `Redis`, `RabbitMQ`):
+   `DirectRoomConcurrencyIntegrationTest`, `RedissonOtpIntegrationTest`, `UserEventAmqpIntegrationTest`.
+4. **Application (Static)**: `ArchitectureKonsistTest`, Archify diagram freshness (`./scripts/sync-archify.sh --check`),
+   and OpenAPI/Postman export (`OpenApiExportTest`).
+5. **End-to-End (E2E)**: Full-stack Spring Boot (`dev,e2e`) + Docker Compose (`postgres`, `redis`, `rabbitmq`,
+   `mailpit`) driven by Android AVD journeys (`DirectChatE2ETest`, `OtpRecoveryE2ETest`).
 
 ```bash
-# Fast cached verification (Tier 1 - Inner loop)
-./scripts/verify.sh fast
+# Layers 1–4 — Selective inner-loop JVM feedback on affected modules
+./scripts/verify.sh
 
-# Full clean verification gate (Tier 2 - Pre-commit)
+# Layers 1–4 — Full pre-merge clean gate (Unit, JPA/MockMvc slices, Konsist & drift check)
 ./scripts/verify.sh clean
 
-# Direct Gradle commands
-GRADLE_RO_DEP_CACHE=${HOME}/.gradle/caches ./gradlew check --gradle-user-home=/tmp/gradle-ro-home
+# Layer 3 (Docker) — Testcontainers integration suites (Postgres, Redis, RabbitMQ)
+./gradlew :app:integrationTest --rerun-tasks
+
+# Layer 5 — Full-stack E2E infra + Spring Boot profile (paired with Android-ChatApp/scripts/e2e/verify.sh)
+docker compose -f docker-compose.e2e.yml up -d --wait
+./gradlew :app:bootRun --args='--spring.profiles.active=dev,e2e'
 ```
