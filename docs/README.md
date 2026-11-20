@@ -4,7 +4,8 @@ This is the unified documentation index for `KMP-ChatBackend`, linking C4 compon
 sequence/lifecycle/dataflow specifications, API specifications, and Elephant-and-Goldfish Model (EGM) technical design
 documents.
 
-> **Governance & Authoring Rules**: Follow global agent lifecycle rules in `~/.gemini/config/AGENTS.md`, architectural
+> **Governance & Authoring Rules**: Follow global git rules in `~/.gemini/config/AGENTS.md`, ecosystem lifecycle
+> governance in [`../KMP-ChatContract/docs/GOVERNANCE.md`](../../KMP-ChatContract/docs/GOVERNANCE.md), architectural
 > philosophy in [`../KMP-ChatContract/docs/PHILOSOPHY.md`](../../KMP-ChatContract/docs/PHILOSOPHY.md), and repository
 > boundary invariants in [`../AGENTS.md`](../AGENTS.md).
 
