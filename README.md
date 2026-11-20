@@ -17,8 +17,8 @@ limiting, room/message persistence, real-time WebSocket sessions, and asynchrono
 | Repository | Role | C4 Architecture Level | Tech Stack |
 |:---|:---|:---|:---|
 | **[KMP-ChatContract](https://github.com/neronguyen/KMP-ChatContract)** | Compile-time wire schema, error contracts, and shared validators | **Level 1** (System Context) & **Level 2** (Containers) | Pure Kotlin 2.4, `kotlinx.serialization` |
-| **[KMP-ChatBackend](https://github.com/neronguyen/KMP-NeroChatBackend)** *(this repo)* | Modular monolith REST & WebSocket server | **Level 3** (Backend Components) | Kotlin, Spring Boot 4, PostgreSQL, Redis (Redisson), RabbitMQ |
-| **[Android-ChatApp](https://github.com/neronguyen/Android-NeroChatApp)** | Native Android client with offline-first persistence and real-time sync | **Level 3** (Android Components) | Jetpack Compose, Navigation 3, Retrofit, OkHttp, Room, DataStore, Hilt, Arrow |
+| **[KMP-ChatBackend](https://github.com/neronguyen/KMP-ChatBackend)** *(this repo)* | Modular monolith REST & WebSocket server | **Level 3** (Backend Components) | Kotlin, Spring Boot 4, PostgreSQL, Redis (Redisson), RabbitMQ |
+| **[Android-ChatApp](https://github.com/neronguyen/Android-ChatApp)** | Native Android client with offline-first persistence and real-time sync | **Level 3** (Android Components) | Jetpack Compose, Navigation 3, Retrofit, OkHttp, Room, DataStore, Hilt, Arrow |
 
 ### Backend Component Architecture (C4 Level 3)
 
@@ -39,7 +39,7 @@ limiting, room/message persistence, real-time WebSocket sessions, and asynchrono
 - [user](./user/README.md) - User authentication, refresh token rotation, email verification, and rate limiting.
 - [chat](./chat/README.md) - Chat rooms, messages, `/ws/chat` WebSocket handler, and Redis slice caching.
 - [notification](./notification/README.md) - Asynchronous SMTP email delivery triggered by RabbitMQ domain events.
-- [build-logic](./build-logic/README.md) - Convention plugin standardizing Kotlin 21 toolchains and dependencies.
+- [build-logic](./build-logic/README.md) - Convention plugin standardizing Java 21 toolchains and dependencies.
 - [docs](./docs/README.md) - Unified C4 architecture, sequence/dataflow specifications, OpenAPI schema, and EGM
   technical design registry.
 
@@ -54,7 +54,7 @@ limiting, room/message persistence, real-time WebSocket sessions, and asynchrono
 ## Global Side Effects
 
 - **PostgreSQL Database**: Relational tables for accounts (`users`, `refresh_tokens`) and conversations (`chat_rooms`,
-  `chat_participants`, `chat_messages`).
+  `chat_participants`, `chat_room_participants_cross_ref`, `chat_messages`).
 - **Redis (Redisson)**: Distributed locks, IP/email rate limiting buckets, hashed 6-digit OTP verification/reset
   buckets, and 30-minute recent message slice cache.
 - **RabbitMQ**: AMQP topic exchanges (`chat.events`, `user.events`) for asynchronous choreography.

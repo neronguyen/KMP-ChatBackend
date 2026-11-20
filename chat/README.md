@@ -6,9 +6,10 @@ Chat room and message management, direct/group room provisioning, real-time auth
 ## Interface
 - `[ChatRoomController.kt:ChatRoomController]`: REST endpoints for room queries, room creation, participants addition, room leave, and message history (`GET /api/chat/rooms`, `GET /api/chat/rooms/{roomId}`, `POST /api/chat/rooms/direct`, `POST /api/chat/rooms/group`, `POST /api/chat/rooms/{roomId}/add`, `DELETE /api/chat/rooms/{roomId}/leave`, `GET /api/chat/rooms/{roomId}/messages`).
 - `[ChatMessageController.kt:ChatMessageController]`: REST endpoint for message deletion (`DELETE /api/chat/messages/{messageId}`).
-- `[ChatParticipantController.kt:ChatParticipantController]`: REST endpoint for participant search by email (`GET /api/chat/participants`).
-- `[ChatWebSocketHandler.kt:ChatWebSocketHandler]`: Authenticated WebSocket connection handler at `/ws/chat` decoding `WsClientMessage` and broadcasting `WsServerEvent` (including initial `DIRECT` room messages and `addedBy` on `ParticipantJoined`) using `ContractJson`.
+- `[ChatParticipantController.kt:ChatParticipantController]`: REST endpoint for participant lookup (`GET /api/chat/participants`; searches by optional `email` or returns the authenticated requester's profile when omitted).
+- `[ChatWebSocketHandler.kt:ChatWebSocketHandler]` & `[WebSocketConfig.kt:WebSocketConfig]`: Authenticated WebSocket connection handler and Spring `@EnableWebSocket` registration at `/ws/chat` decoding `WsClientMessage` and broadcasting `WsServerEvent` (including initial `DIRECT` room messages and `addedBy` on `ParticipantJoined`) using `ContractJson`.
 - `[ChatRoomService.kt:ChatRoomService]`: Room creation, membership verification, and participant management.
+- `[ChatParticipantService.kt:ChatParticipantService]`: Participant lookup and profile provisioning service backing `ChatParticipantController` and `ChatUserEventListener`.
 - `[DirectChatRoomCreationTxHelper.kt:DirectChatRoomCreationTxHelper]`: Isolated `REQUIRES_NEW` transaction helper for concurrent-safe `DIRECT` room creation and `AFTER_COMMIT` event publication.
 - `[ChatMessageService.kt:ChatMessageService]`: Message persistence, idempotent deduplication, and Redis slice caching.
 - `[ChatUserEventListener.kt:ChatUserEventListener]`: RabbitMQ AMQP listener provisioning participant records when a user verifies their email.
@@ -21,7 +22,7 @@ Chat room and message management, direct/group room provisioning, real-time auth
 - Messages must be persisted to PostgreSQL before WebSocket broadcast.
 
 ## Side Effects
-- Reads/writes PostgreSQL tables: `chat_rooms`, `chat_participants`, `chat_messages`.
+- Reads/writes PostgreSQL tables: `chat_rooms`, `chat_participants`, `chat_room_participants_cross_ref`, `chat_messages`.
 - Reads/writes Redis cache for recent message slices (`messages` cache).
 - Consumes `UserEvent.Verified` from RabbitMQ.
 - Publishes `ChatEvent.NewMessage` to RabbitMQ.

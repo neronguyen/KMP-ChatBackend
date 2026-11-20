@@ -14,7 +14,7 @@ password resets, and Redis-backed rate limiting.
   handling for email confirmation.
 - `[PasswordResetService.kt:PasswordResetService]`: 6-digit OTP verification, password mutation, and global refresh
   token revocation.
-- `[IpRateLimitingService.kt:IpRateLimitingService]`: Redis-backed distributed IP rate limiting for authentication endpoints.
+- `[IpRateLimitingService.kt:IpRateLimitingService]`, `[IpRateLimiting.kt:IpRateLimiting]`, `[IpRateLimitingInterceptor.kt:IpRateLimitingInterceptor]`, & `[WebMvcConfig.kt:WebMvcConfig]`: Redis-backed distributed IP rate limiting annotation, interceptor, MVC wiring, and service for authentication endpoints.
 - `[EmailRateLimitingService.kt:EmailRateLimitingService]`: Redis-backed distributed email rate limiting to mitigate brute-force attempts.
 - `[AuthExceptionHandler.kt:AuthExceptionHandler]`: Exception handler mapping domain exceptions
   (`InvalidCredentialsException`, `EmailNotVerifiedException`, `InvalidOtpException`, `OtpExpiredException`,
