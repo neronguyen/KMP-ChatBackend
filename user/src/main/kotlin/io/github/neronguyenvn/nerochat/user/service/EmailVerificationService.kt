@@ -8,6 +8,8 @@ import io.github.neronguyenvn.nerochat.user.infra.database.model.userId
 import io.github.neronguyenvn.nerochat.user.infra.database.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 class EmailVerificationService(
@@ -74,6 +76,16 @@ class EmailVerificationService(
             )
         )
 
-        otpService.deleteOtp(OtpType.VERIFY, normalizedEmail)
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        otpService.deleteOtp(OtpType.VERIFY, normalizedEmail)
+                    }
+                }
+            )
+        } else {
+            otpService.deleteOtp(OtpType.VERIFY, normalizedEmail)
+        }
     }
 }

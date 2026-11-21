@@ -208,6 +208,12 @@ object PostmanCollectionGenerator {
               "password": "Password123"
             }
         """.trimIndent()
+        path.endsWith("/api/auth/verify-email") -> """
+            {
+              "email": "user@example.com",
+              "code": "123456"
+            }
+        """.trimIndent()
         path.endsWith("/api/auth/resend-verification") || path.endsWith("/api/auth/forgot-password") -> """
             {
               "email": "user@example.com"
@@ -220,7 +226,8 @@ object PostmanCollectionGenerator {
         """.trimIndent()
         path.endsWith("/api/auth/reset-password") -> """
             {
-              "token": "reset-token",
+              "email": "user@example.com",
+              "code": "123456",
               "newPassword": "NewPassword123"
             }
         """.trimIndent()
@@ -290,7 +297,11 @@ object PostmanCollectionGenerator {
         )
         if (errorCode.endsWith("ValidationFailed") || errorCode == "VALIDATION_FAILED") {
             errorPayload["fieldErrors"] = mapOf("email" to "Email must not be blank")
-        } else if (errorCode.endsWith("RateLimitExceeded") || errorCode == "RATE_LIMIT_EXCEEDED") {
+        } else if (
+            errorCode.endsWith("RateLimitExceeded") ||
+            errorCode == "RATE_LIMIT_EXCEEDED" ||
+            errorCode.endsWith("MaxAttemptsExceeded")
+        ) {
             errorPayload["retryAfterSeconds"] = 60
         }
         return objectMapper.writeValueAsString(errorPayload)
@@ -303,6 +314,9 @@ object PostmanCollectionGenerator {
         "Unauthorized", "UNAUTHORIZED" -> "Authentication required"
         "InvalidCredentials", "INVALID_CREDENTIALS" -> "Invalid email or password"
         "InvalidToken", "INVALID_TOKEN" -> "Invalid or expired token"
+        "InvalidCode" -> "Invalid verification code"
+        "CodeExpired" -> "Verification code has expired"
+        "MaxAttemptsExceeded" -> "Too many failed attempts. Please try again later."
         "WrongPassword", "WRONG_PASSWORD" -> "Current password is incorrect"
         "Forbidden", "FORBIDDEN" -> "Access denied"
         "EmailNotVerified", "EMAIL_NOT_VERIFIED" -> "Email is not verified"

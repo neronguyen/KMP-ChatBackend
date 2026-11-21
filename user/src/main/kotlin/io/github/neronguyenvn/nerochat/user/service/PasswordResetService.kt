@@ -14,6 +14,8 @@ import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -85,7 +87,17 @@ class PasswordResetService(
         userRepository.save(user)
 
         // 6. Delete Redis OTP keys upon successful commit
-        otpService.deleteOtp(OtpType.RESET, normalizedEmail)
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        otpService.deleteOtp(OtpType.RESET, normalizedEmail)
+                    }
+                }
+            )
+        } else {
+            otpService.deleteOtp(OtpType.RESET, normalizedEmail)
+        }
     }
 
     /**

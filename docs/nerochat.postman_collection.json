@@ -521,6 +521,15 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        },
         "url" : {
           "raw" : "{{baseUrl}}/api/auth/verify-email",
           "host" : [ "{{baseUrl}}" ],
@@ -535,7 +544,7 @@
         "_postman_previewlanguage" : "json",
         "header" : [ ]
       }, {
-        "name" : "400 Bad Request. Contract error codes: `AuthServerError.InvalidCode`, `AuthServerError.CodeExpired`, `AuthServerError.MaxAttemptsExceeded`, `CommonServerError.ValidationFailed`",
+        "name" : "400 Bad Request. Contract error codes: `AuthServerError.InvalidCode`, `AuthServerError.CodeExpired`, `CommonServerError.ValidationFailed`",
         "status" : "Bad Request",
         "code" : 400,
         "_postman_previewlanguage" : "json",
@@ -543,9 +552,9 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"error\" : \"AuthServerError.InvalidCode\",\n  \"message\" : \"An unexpected error occurred\"\n}"
+        "body" : "{\n  \"error\" : \"AuthServerError.InvalidCode\",\n  \"message\" : \"Invalid verification code\"\n}"
       }, {
-        "name" : "429 Too Many Requests. Contract error codes: `CommonServerError.RateLimitExceeded`",
+        "name" : "429 Too Many Requests. Contract error codes: `AuthServerError.MaxAttemptsExceeded`, `CommonServerError.RateLimitExceeded`",
         "status" : "Too Many Requests",
         "code" : 429,
         "_postman_previewlanguage" : "json",
@@ -553,7 +562,7 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"error\" : \"CommonServerError.RateLimitExceeded\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
+        "body" : "{\n  \"error\" : \"AuthServerError.MaxAttemptsExceeded\",\n  \"message\" : \"Too many failed attempts. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       } ]
     }, {
       "name" : "Reset password",
@@ -565,7 +574,7 @@
         } ],
         "body" : {
           "mode" : "raw",
-          "raw" : "{\n  \"token\": \"reset-token\",\n  \"newPassword\": \"NewPassword123\"\n}",
+          "raw" : "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"NewPassword123\"\n}",
           "options" : {
             "raw" : {
               "language" : "json"
@@ -586,7 +595,7 @@
         "_postman_previewlanguage" : "json",
         "header" : [ ]
       }, {
-        "name" : "400 Bad Request. Contract error codes: `AuthServerError.InvalidCode`, `AuthServerError.CodeExpired`, `AuthServerError.MaxAttemptsExceeded`, `CommonServerError.ValidationFailed`",
+        "name" : "400 Bad Request. Contract error codes: `AuthServerError.InvalidCode`, `AuthServerError.CodeExpired`, `CommonServerError.ValidationFailed`",
         "status" : "Bad Request",
         "code" : 400,
         "_postman_previewlanguage" : "json",
@@ -594,7 +603,17 @@
           "key" : "Content-Type",
           "value" : "application/json"
         } ],
-        "body" : "{\n  \"error\" : \"AuthServerError.InvalidCode\",\n  \"message\" : \"An unexpected error occurred\"\n}"
+        "body" : "{\n  \"error\" : \"AuthServerError.InvalidCode\",\n  \"message\" : \"Invalid verification code\"\n}"
+      }, {
+        "name" : "429 Too Many Requests. Contract error codes: `AuthServerError.MaxAttemptsExceeded`, `CommonServerError.RateLimitExceeded`",
+        "status" : "Too Many Requests",
+        "code" : 429,
+        "_postman_previewlanguage" : "json",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        } ],
+        "body" : "{\n  \"error\" : \"AuthServerError.MaxAttemptsExceeded\",\n  \"message\" : \"Too many failed attempts. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       }, {
         "name" : "409 Conflict. Contract error codes: `AuthServerError.SamePassword`",
         "status" : "Conflict",
@@ -605,16 +624,6 @@
           "value" : "application/json"
         } ],
         "body" : "{\n  \"error\" : \"AuthServerError.SamePassword\",\n  \"message\" : \"New password cannot be the same as the old password\"\n}"
-      }, {
-        "name" : "429 Too Many Requests. Contract error codes: `CommonServerError.RateLimitExceeded`",
-        "status" : "Too Many Requests",
-        "code" : 429,
-        "_postman_previewlanguage" : "json",
-        "header" : [ {
-          "key" : "Content-Type",
-          "value" : "application/json"
-        } ],
-        "body" : "{\n  \"error\" : \"CommonServerError.RateLimitExceeded\",\n  \"message\" : \"Too many requests. Please try again later.\",\n  \"retryAfterSeconds\" : 60\n}"
       } ]
     }, {
       "name" : "Resend verification email",
