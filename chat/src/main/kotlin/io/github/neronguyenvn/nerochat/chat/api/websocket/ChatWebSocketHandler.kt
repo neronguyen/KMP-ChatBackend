@@ -16,6 +16,7 @@ import io.github.neronguyenvn.nerochat.service.JwtService
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -32,17 +33,32 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 @Component
-class ChatWebSocketHandler(
+class ChatWebSocketHandler internal constructor(
     private val chatRoomService: ChatRoomService,
     private val chatMessageService: ChatMessageService,
     private val jwtService: JwtService,
-    private val json: Json = ContractJson
+    private val json: Json = ContractJson,
+    private val currentTimeMillis: () -> Long = System::currentTimeMillis,
 ) : TextWebSocketHandler() {
+
+    @Autowired
+    constructor(
+        chatRoomService: ChatRoomService,
+        chatMessageService: ChatMessageService,
+        jwtService: JwtService,
+        json: Json = ContractJson,
+    ) : this(
+        chatRoomService = chatRoomService,
+        chatMessageService = chatMessageService,
+        jwtService = jwtService,
+        json = json,
+        currentTimeMillis = System::currentTimeMillis,
+    )
 
     private data class UserSession(
         val userId: UserId,
         val session: WebSocketSession,
-        var lastPongTimestamp: AtomicLong = AtomicLong(System.currentTimeMillis())
+        val lastPongTimestamp: AtomicLong,
     )
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -51,6 +67,10 @@ class ChatWebSocketHandler(
     private val sessionIdsByUserId = ConcurrentHashMap<UserId, MutableSet<String>>()
     private val roomIdsByUserId = ConcurrentHashMap<UserId, MutableSet<ChatRoomId>>()
     private val sessionIdsByRoomId = ConcurrentHashMap<ChatRoomId, MutableSet<String>>()
+    private val userLocks = Array(USER_LOCK_STRIPES) { Any() }
+
+    private fun userLock(userId: UserId): Any =
+        userLocks[(userId.value.hashCode() and Int.MAX_VALUE) % userLocks.size]
 
 
     override fun afterConnectionEstablished(session: WebSocketSession) {
@@ -74,46 +94,60 @@ class ChatWebSocketHandler(
         val decoratedSession = ConcurrentWebSocketSessionDecorator(session, 5000, 64 * 1024)
         val userSession = UserSession(
             userId = userId,
-            session = decoratedSession
+            session = decoratedSession,
+            lastPongTimestamp = AtomicLong(currentTimeMillis()),
         )
 
-        sessionsById[session.id] = userSession
+        synchronized(userLock(userId)) {
+            sessionsById[session.id] = userSession
 
-        sessionIdsByUserId
-            .computeIfAbsent(userId) { ConcurrentHashMap.newKeySet() }
-            .add(session.id)
-
-        val roomIds = roomIdsByUserId.computeIfAbsent(userId) {
-            val userChatRooms = chatRoomService.findChatRoomsByUser(userId = userId).map { it.id }
-            ConcurrentHashMap.newKeySet<ChatRoomId>().apply { addAll(userChatRooms) }
-        }
-
-        roomIds.forEach { roomId ->
-            sessionIdsByRoomId
-                .computeIfAbsent(roomId) { ConcurrentHashMap.newKeySet() }
+            sessionIdsByUserId
+                .computeIfAbsent(userId) { ConcurrentHashMap.newKeySet() }
                 .add(session.id)
+
+            val roomIds = roomIdsByUserId.computeIfAbsent(userId) {
+                val userChatRooms = chatRoomService.findChatRoomsByUser(userId = userId).map { it.id }
+                ConcurrentHashMap.newKeySet<ChatRoomId>().apply { addAll(userChatRooms) }
+            }
+
+            roomIds.forEach { roomId ->
+                sessionIdsByRoomId.compute(roomId) { _, existing ->
+                    (existing ?: ConcurrentHashMap.newKeySet()).apply { add(session.id) }
+                }
+            }
         }
 
         logger.info("Websocket connection established for user $userId")
     }
 
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
-        val userSession = sessionsById.remove(session.id) ?: return
-        val userId = userSession.userId
+        val evicted = evictSession(session.id) ?: return
+        logger.info("WebSocket closed: user={}, session={}, status={}", evicted.userId, session.id, status)
+    }
 
-        roomIdsByUserId[userId]?.forEach { roomId ->
-            sessionIdsByRoomId[roomId]?.remove(session.id)
-        }
+    private fun evictSession(sessionId: String): UserSession? {
+        val userId = sessionsById[sessionId]?.userId ?: return null
+        return synchronized(userLock(userId)) {
+            val userSession = sessionsById.remove(sessionId) ?: return@synchronized null
 
-        sessionIdsByUserId[userId]?.let { sessions ->
-            sessions.remove(session.id)
-            if (sessions.isEmpty()) {
-                sessionIdsByUserId.remove(userId)
+            roomIdsByUserId[userId]?.forEach { roomId ->
+                sessionIdsByRoomId.computeIfPresent(roomId) { _, sessions ->
+                    sessions.remove(sessionId)
+                    if (sessions.isEmpty()) null else sessions
+                }
+            }
+
+            sessionIdsByUserId.computeIfPresent(userId) { _, sessions ->
+                sessions.remove(sessionId)
+                if (sessions.isEmpty()) null else sessions
+            }
+
+            if (!sessionIdsByUserId.containsKey(userId)) {
                 roomIdsByUserId.remove(userId)
             }
-        }
 
-        logger.info("WebSocket closed: user={}, session={}, status={}", userId, session.id, status)
+            userSession
+        }
     }
 
     override fun handleTransportError(session: WebSocketSession, exception: Throwable) {
@@ -125,34 +159,46 @@ class ChatWebSocketHandler(
         }
     }
 
-    @Scheduled(fixedDelay = PING_INTERVAL_MS)
-    private fun pingClients() {
-        val currentTime = System.currentTimeMillis()
+    @Scheduled(fixedDelay = PING_INTERVAL_MS, scheduler = HEARTBEAT_SCHEDULER_BEAN_NAME)
+    internal fun pingClients() {
+        val currentTime = currentTimeMillis()
         val sessionsToClose = mutableListOf<String>()
+        val staleClosedSessions = mutableListOf<String>()
 
         sessionsById.entries.forEach { (sessionId, userSession) ->
             try {
-                if (userSession.session.isOpen) {
-                    val lastPong = userSession.lastPongTimestamp.get()
-                    if (currentTime - lastPong > PONG_TIMEOUT_MS) {
-                        logger.warn("Session $sessionId has timed out, closing connection.")
-                        sessionsToClose.add(sessionId)
-                        return@forEach
-                    }
-
-                    userSession.session.sendMessage(PingMessage())
-                    logger.debug("Sent ping to {}", userSession.userId)
+                if (!userSession.session.isOpen) {
+                    staleClosedSessions.add(sessionId)
+                    return@forEach
                 }
+
+                val lastPong = userSession.lastPongTimestamp.get()
+                if (currentTime - lastPong > PONG_TIMEOUT_MS) {
+                    logger.warn("Session $sessionId has timed out, closing connection.")
+                    sessionsToClose.add(sessionId)
+                    return@forEach
+                }
+
+                userSession.session.sendMessage(PingMessage())
+                logger.debug("Sent ping to {}", userSession.userId)
             } catch (e: Exception) {
                 logger.error("Could not ping session $sessionId", e)
                 sessionsToClose.add(sessionId)
             }
         }
 
+        staleClosedSessions.forEach { sessionId ->
+            logger.debug("Evicting stale closed session {}", sessionId)
+            evictSession(sessionId)
+        }
+
         sessionsToClose.forEach { sessionId ->
-            sessionsById[sessionId]?.session?.let { session ->
+            val userSession = evictSession(sessionId)
+            userSession?.session?.let { session ->
                 try {
-                    session.close(CloseStatus.SESSION_NOT_RELIABLE.withReason("Ping timeout"))
+                    if (session.isOpen) {
+                        session.close(CloseStatus.SESSION_NOT_RELIABLE.withReason("Ping timeout"))
+                    }
                 } catch (e: Exception) {
                     logger.error("Couldn't close sessions for session ${session.id}", e)
                 }
@@ -161,7 +207,7 @@ class ChatWebSocketHandler(
     }
 
     override fun handlePongMessage(session: WebSocketSession, message: PongMessage) {
-        sessionsById[session.id]?.lastPongTimestamp?.set(System.currentTimeMillis())
+        sessionsById[session.id]?.lastPongTimestamp?.set(currentTimeMillis())
         logger.debug("Received pong from ${session.id}")
     }
 
@@ -292,15 +338,7 @@ class ChatWebSocketHandler(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     internal fun onJoinChatRoom(event: InternalChatEvent.ChatParticipantJoinedEvent) {
         event.newUsers.forEach { user ->
-            roomIdsByUserId
-                .computeIfAbsent(user.userId) { ConcurrentHashMap.newKeySet() }
-                .add(event.roomId)
-
-            sessionIdsByUserId[user.userId]?.let { sessions ->
-                sessionIdsByRoomId
-                    .computeIfAbsent(event.roomId) { ConcurrentHashMap.newKeySet() }
-                    .addAll(sessions)
-            }
+            registerRoomForOnlineUser(userId = user.userId, roomId = event.roomId)
         }
 
         broadcastToChatRoom(
@@ -316,24 +354,46 @@ class ChatWebSocketHandler(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     internal fun onRoomCreated(event: InternalChatEvent.ChatRoomCreatedEvent) {
         event.chatRoom.participants.forEach { user ->
-            roomIdsByUserId
-                .computeIfAbsent(user.userId) { ConcurrentHashMap.newKeySet() }
-                .add(event.chatRoom.id)
-
-            sessionIdsByUserId[user.userId]?.let { sessions ->
-                sessionIdsByRoomId
-                    .computeIfAbsent(event.chatRoom.id) { ConcurrentHashMap.newKeySet() }
-                    .addAll(sessions)
-            }
+            registerRoomForOnlineUser(userId = user.userId, roomId = event.chatRoom.id)
         }
 
-        event.chatRoom.lastMessage?.let { initialMessage ->
+        val initialMessage = event.chatRoom.lastMessage
+        if (initialMessage != null) {
             broadcastToChatRoom(
                 roomId = event.chatRoom.id,
                 event = WsServerEvent.NewMessage(
                     message = initialMessage.asDto(),
                 ),
             )
+        } else {
+            val newUsers = event.chatRoom.participants
+                .filter { it.userId != event.chatRoom.creator.userId }
+                .map { it.asDto() }
+            if (newUsers.isNotEmpty()) {
+                broadcastToChatRoom(
+                    roomId = event.chatRoom.id,
+                    event = WsServerEvent.ParticipantJoined(
+                        roomId = event.chatRoom.id.value,
+                        newUsers = newUsers,
+                        addedBy = event.chatRoom.creator.asDto(),
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun registerRoomForOnlineUser(userId: UserId, roomId: ChatRoomId) {
+        synchronized(userLock(userId)) {
+            val sessions = sessionIdsByUserId[userId]
+            if (sessions.isNullOrEmpty()) return
+
+            roomIdsByUserId
+                .computeIfAbsent(userId) { ConcurrentHashMap.newKeySet() }
+                .add(roomId)
+
+            sessionIdsByRoomId.compute(roomId) { _, existing ->
+                (existing ?: ConcurrentHashMap.newKeySet()).apply { addAll(sessions) }
+            }
         }
     }
 
@@ -348,9 +408,15 @@ class ChatWebSocketHandler(
         )
 
         val leftUserId = event.leftUser.userId
-        roomIdsByUserId[leftUserId]?.remove(event.roomId)
-        sessionIdsByUserId[leftUserId]?.forEach { sessionId ->
-            sessionIdsByRoomId[event.roomId]?.remove(sessionId)
+        synchronized(userLock(leftUserId)) {
+            roomIdsByUserId[leftUserId]?.remove(event.roomId)
+            val sessions = sessionIdsByUserId[leftUserId]
+            if (!sessions.isNullOrEmpty()) {
+                sessionIdsByRoomId.computeIfPresent(event.roomId) { _, roomSessions ->
+                    roomSessions.removeAll(sessions)
+                    if (roomSessions.isEmpty()) null else roomSessions
+                }
+            }
         }
     }
 
@@ -358,14 +424,28 @@ class ChatWebSocketHandler(
         roomId: ChatRoomId,
         event: WsServerEvent
     ) {
-        val sessionIds = sessionIdsByRoomId[roomId] ?: return
+        val sessionIds = sessionIdsByRoomId[roomId]?.toList() ?: return
         val payload = TextMessage(json.encodeToString(event))
 
         sessionIds.forEach { sessionId ->
-            val session = sessionsById[sessionId] ?: return@forEach
+            val session = sessionsById[sessionId]
+            if (session == null) {
+                sessionIdsByRoomId.computeIfPresent(roomId) { _, set ->
+                    set.remove(sessionId)
+                    if (set.isEmpty()) null else set
+                }
+                return@forEach
+            }
+            if (!session.session.isOpen) {
+                evictSession(sessionId)
+                return@forEach
+            }
             val chatRooms = roomIdsByUserId[session.userId]
             if (chatRooms == null || roomId !in chatRooms) {
-                sessionIds.remove(sessionId)
+                sessionIdsByRoomId.computeIfPresent(roomId) { _, set ->
+                    set.remove(sessionId)
+                    if (set.isEmpty()) null else set
+                }
                 return@forEach
             }
 
@@ -385,7 +465,9 @@ class ChatWebSocketHandler(
     }
 
     companion object {
-        private const val PING_INTERVAL_MS = 30_000L
-        private const val PONG_TIMEOUT_MS = 30_000L
+        internal const val HEARTBEAT_SCHEDULER_BEAN_NAME = "webSocketHeartbeatScheduler"
+        internal const val PING_INTERVAL_MS = 30_000L
+        internal const val PONG_TIMEOUT_MS = 60_000L
+        private const val USER_LOCK_STRIPES = 256
     }
 }
