@@ -1,3 +1,6 @@
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: nerochat
@@ -32,24 +35,26 @@ spring:
     redisson:
       config: |
         singleServerConfig:
-          address: "redis://${REDIS_HOST}:${REDIS_PORT}"
-          connectionMinimumIdleSize: 2    
-          connectionPoolSize: 5         
+          address: "${REDIS_PROTOCOL:redis}://${REDIS_HOST}:${REDIS_PORT}"
+          password: "${REDIS_PASSWORD}"
+          connectionMinimumIdleSize: ${REDIS_MIN_IDLE:2}
+          connectionPoolSize: ${REDIS_POOL_SIZE:5}
+          subscriptionConnectionMinimumIdleSize: ${REDIS_SUB_MIN_IDLE:1}
+          subscriptionConnectionPoolSize: ${REDIS_SUB_POOL_SIZE:5}
           connectTimeout: 10000
           timeout: 3000
-        
-        password: "${REDIS_PASSWORD}"
 
   jpa:
     open-in-view: false
 
   rabbitmq:
     host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5671}
     username: ${RABBITMQ_USERNAME}
     virtual-host: ${RABBITMQ_VHOST}
     password: ${RABBITMQ_PASSWORD}
     ssl:
-      enabled: true
+      enabled: ${RABBITMQ_SSL_ENABLED:true}
     template:
       retry:
         enabled: true
@@ -98,6 +103,8 @@ email:
 
 trusted-proxy:
   trusted-ips:
-    - "100.64.0.0/10"   # Railway
+    - "100.64.0.0/10"   # Railway / Tailscale CGNAT
+    - "172.16.0.0/12"   # Docker bridge networks (Caddy -> backend)
+    - "10.0.0.0/8"      # Private VPC / OCI VCN
     - "127.0.0.1/32"    # localhost
     - "::1/128"         # IPv6 localhost

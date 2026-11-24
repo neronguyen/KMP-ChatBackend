@@ -1,0 +1,16 @@
+.git/
+.github/
+.gradle/
+.idea/
+**/build/
+build/
+docs/
+scripts/
+*.iml
+*.log
+.env
+.env.*
+!.env.example
+local.properties
+docker-compose*.yml
+Caddyfile
