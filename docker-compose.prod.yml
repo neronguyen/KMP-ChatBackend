@@ -1,0 +1,126 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: nerochat-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+    networks:
+      - nerochat_internal
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - github_actor
+        - github_token
+    container_name: nerochat-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      PORT: 8080
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nerochat}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME:-nerochat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_PROTOCOL: ${REDIS_PROTOCOL:-redis}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_SSL_ENABLED: ${RABBITMQ_SSL_ENABLED:-false}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-nerochat}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nerochat_internal
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: nerochat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nerochat}
+      POSTGRES_USER: ${POSTGRES_USERNAME:-nerochat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME:-nerochat} -d ${POSTGRES_DB:-nerochat}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - nerochat_internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: nerochat-redis
+    restart: unless-stopped
+    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - nerochat_internal
+
+  rabbitmq:
+    image: rabbitmq:4-alpine
+    container_name: nerochat-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-nerochat}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
+    networks:
+      - nerochat_internal
+
+secrets:
+  github_actor:
+    environment: GITHUB_ACTOR
+  github_token:
+    environment: GITHUB_TOKEN
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  nerochat_internal:
+    driver: bridge
